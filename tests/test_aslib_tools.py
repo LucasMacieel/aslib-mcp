@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import pytest
 
 from src.tools.aslib_scenario import (
     aslib_change_perf_measure,

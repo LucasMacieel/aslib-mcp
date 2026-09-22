@@ -51,7 +51,7 @@ def test_vbs_and_sbs_exact_baselines(mini_scenario_dir: Path, predictions_csv: P
     assert stats["VBS"]["timeouts_count"] == 0
 
     # SBS is algo_b: [2.0, 3.0, 6.0, 5.0, 4.0] = 20.0 / 5 = 4.0
-    sbs_key = [k for k in stats if k.startswith("SBS")][0]
+    sbs_key = next(k for k in stats if k.startswith("SBS"))
     assert "algo_b" in sbs_key
     assert stats[sbs_key]["par_score"] == pytest.approx(4.0, rel=1e-3)
     assert stats[sbs_key]["timeouts_count"] == 0
@@ -71,11 +71,17 @@ def test_selector_evaluation_with_and_without_feature_costs(
     )
     selectors_no_cost = {s["name"]: s for s in res_no_cost["rankings"]}
     # perfect_selector matches VBS exactly (2.6)
-    assert selectors_no_cost["perfect_selector"]["par_score"] == pytest.approx(2.6, rel=1e-3)
+    assert selectors_no_cost["perfect_selector"]["par_score"] == pytest.approx(
+        2.6, rel=1e-3
+    )
     # static_sbs_selector matches SBS exactly (4.0)
-    assert selectors_no_cost["static_sbs_selector"]["par_score"] == pytest.approx(4.0, rel=1e-3)
+    assert selectors_no_cost["static_sbs_selector"]["par_score"] == pytest.approx(
+        4.0, rel=1e-3
+    )
     # poor_selector has 2 timeouts on inst_4 and inst_5: 5+8+6+100+100 = 219 / 5 = 43.8
-    assert selectors_no_cost["poor_selector"]["par_score"] == pytest.approx(43.8, rel=1e-3)
+    assert selectors_no_cost["poor_selector"]["par_score"] == pytest.approx(
+        43.8, rel=1e-3
+    )
     assert selectors_no_cost["poor_selector"]["timeouts_count"] == 2
 
     # 2. With feature costs (feat_1 cost 0.05 + feat_2 cost 0.15 = 0.20 per instance)
@@ -86,10 +92,14 @@ def test_selector_evaluation_with_and_without_feature_costs(
     )
     selectors_cost = {s["name"]: s for s in res_cost["rankings"]}
     # 2.6 + 0.20 = 2.80
-    assert selectors_cost["perfect_selector"]["par_score"] == pytest.approx(2.8, rel=1e-3)
+    assert selectors_cost["perfect_selector"]["par_score"] == pytest.approx(
+        2.8, rel=1e-3
+    )
 
 
-def test_selector_rankings_and_winner(mini_scenario_dir: Path, predictions_csv: Path, tmp_path: Path):
+def test_selector_rankings_and_winner(
+    mini_scenario_dir: Path, predictions_csv: Path, tmp_path: Path
+):
     """Winning selector must be ranked first and artifacts created on disk."""
     out_dir = tmp_path / "eval_out"
     evaluator = SelectorEvaluator(mini_scenario_dir, par_factor=10.0)
@@ -102,6 +112,7 @@ def test_selector_rankings_and_winner(mini_scenario_dir: Path, predictions_csv: 
 
     ranking = res["rankings"]
     # VBS is ranked #1 (score 2.6), perfect_selector is #2 (score 2.6) or #1 among selectors
+    assert len(ranking) >= 2
     assert res["top_selector"] == "perfect_selector"
     assert len(res["significance_tests"]) >= 1
 
@@ -111,7 +122,9 @@ def test_selector_rankings_and_winner(mini_scenario_dir: Path, predictions_csv: 
         assert Path(art["path"]).is_file()
 
 
-def test_evaluate_missing_predictions_csv_raises(mini_scenario_dir: Path, tmp_path: Path):
+def test_evaluate_missing_predictions_csv_raises(
+    mini_scenario_dir: Path, tmp_path: Path
+):
     """Missing predictions CSV file must raise FileNotFoundError."""
     evaluator = SelectorEvaluator(mini_scenario_dir)
     with pytest.raises(FileNotFoundError, match="Predictions CSV not found"):

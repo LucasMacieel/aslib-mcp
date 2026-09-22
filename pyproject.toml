@@ -22,7 +22,11 @@ aslib-mcp = "src.aslib_mcp:mcp.run"
 dev = [
     "pytest>=8.0.0",
     "ruff>=0.8.0",
+    "ty>=0.0.80",
 ]
+
+[tool.ty.environment]
+python-version = "3.12"
 
 [tool.pytest.ini_options]
 markers = [

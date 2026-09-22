@@ -12,7 +12,9 @@ from src.tools.scenario_exporter import export_aslib_scenario
 from src.tools.spec_checker import lint_scenario_spec
 
 
-def test_export_runtime_scenario_full_roundtrip(synthetic_data: dict[str, Any], tmp_path: Path):
+def test_export_runtime_scenario_full_roundtrip(
+    synthetic_data: dict[str, Any], tmp_path: Path
+):
     """Exported runtime scenario must create all files, pass spec linting, and load into ASlibScenario."""
     out_dir = tmp_path / "exported_runtime"
     res = export_aslib_scenario(
@@ -55,8 +57,8 @@ def test_export_runtime_scenario_full_roundtrip(synthetic_data: dict[str, Any], 
     scen = ASlibScenario()
     scen.read_scenario(str(out_dir))
     assert scen.scenario == "EXPORTED-TEST"
-    assert len(scen.instances) == 5
-    assert len(scen.algorithms) == 3
+    assert scen.instances is not None and len(scen.instances) == 5
+    assert scen.algorithms is not None and len(scen.algorithms) == 3
 
 
 def test_export_without_feature_costs(synthetic_data: dict[str, Any], tmp_path: Path):
@@ -71,12 +73,15 @@ def test_export_without_feature_costs(synthetic_data: dict[str, Any], tmp_path: 
         feature_costs_csv_path=None,
     )
 
+    assert res["scenario_id"] == "NO-COSTS-TEST"
     assert not (out_dir / "feature_costs.arff").is_file()
     lint = lint_scenario_spec(out_dir)
     assert lint["is_valid"] is True
 
 
-def test_export_solution_quality_maximization(synthetic_data: dict[str, Any], tmp_path: Path):
+def test_export_solution_quality_maximization(
+    synthetic_data: dict[str, Any], tmp_path: Path
+):
     """Exporting solution quality objective with maximization."""
     out_dir = tmp_path / "exported_quality"
     res = export_aslib_scenario(
@@ -94,6 +99,7 @@ def test_export_solution_quality_maximization(synthetic_data: dict[str, Any], tm
     assert res["objective"] == "solution_quality"
 
     import yaml
+
     with open(out_dir / "description.txt", "r", encoding="utf-8") as f:
         desc = yaml.safe_load(f)
     assert desc["maximize"] == [True]
@@ -138,9 +144,13 @@ def test_export_missing_perf_csv_raises(tmp_path: Path):
         )
 
 
-def test_export_no_common_instances_raises(synthetic_data: dict[str, Any], tmp_path: Path):
+def test_export_no_common_instances_raises(
+    synthetic_data: dict[str, Any], tmp_path: Path
+):
     """Completely disjoint instances between performance and feature tables must raise ValueError."""
-    disjoint_feat = pd.DataFrame([[1.0, 2.0]], index=["other_inst"], columns=["feat_1", "feat_2"])
+    disjoint_feat = pd.DataFrame(
+        [[1.0, 2.0]], index=["other_inst"], columns=["feat_1", "feat_2"]
+    )
     disjoint_csv = tmp_path / "disjoint_feat.csv"
     disjoint_feat.to_csv(disjoint_csv)
 

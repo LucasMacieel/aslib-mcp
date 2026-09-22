@@ -1,8 +1,8 @@
 """Unit and negative tests for ASlibSpecLinter and spec_checker."""
 
 import shutil
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
 
 import arff
 import pytest
@@ -47,7 +47,10 @@ def test_lint_missing_required_file(mini_scenario_dir: Path, tmp_path: Path):
 
     res = lint_scenario_spec(corrupt_dir)
     assert res["is_valid"] is False
-    assert any("Missing required ASlib specification file: algorithm_runs.arff" in e for e in res["errors"])
+    assert any(
+        "Missing required ASlib specification file: algorithm_runs.arff" in e
+        for e in res["errors"]
+    )
 
 
 def test_lint_malformed_description_yaml(mini_scenario_dir: Path, tmp_path: Path):
@@ -61,10 +64,14 @@ def test_lint_malformed_description_yaml(mini_scenario_dir: Path, tmp_path: Path
 
     res = lint_scenario_spec(corrupt_dir)
     assert res["is_valid"] is False
-    assert any("Failed to parse description.txt as valid YAML" in e for e in res["errors"])
+    assert any(
+        "Failed to parse description.txt as valid YAML" in e for e in res["errors"]
+    )
 
 
-def test_lint_missing_description_required_keys(mini_scenario_dir: Path, tmp_path: Path):
+def test_lint_missing_description_required_keys(
+    mini_scenario_dir: Path, tmp_path: Path
+):
     """A description missing required keys (e.g. scenario_id) must be rejected."""
     corrupt_dir = tmp_path / "missing_keys"
     shutil.copytree(mini_scenario_dir, corrupt_dir)
@@ -82,7 +89,9 @@ def test_lint_missing_description_required_keys(mini_scenario_dir: Path, tmp_pat
     res = lint_scenario_spec(corrupt_dir)
     assert res["is_valid"] is False
     assert any("missing required key: 'scenario_id'" in e for e in res["errors"])
-    assert any("missing required key: 'performance_measures'" in e for e in res["errors"])
+    assert any(
+        "missing required key: 'performance_measures'" in e for e in res["errors"]
+    )
 
 
 def test_lint_instance_mismatch_across_files(mini_scenario_dir: Path, tmp_path: Path):
@@ -120,7 +129,10 @@ def test_lint_invalid_runstatus_rejected(mini_scenario_dir: Path, tmp_path: Path
 
     res = lint_scenario_spec(corrupt_dir)
     assert res["is_valid"] is False
-    assert any("Failed to parse algorithm_runs.arff" in e or "Invalid runstatus" in e for e in res["errors"])
+    assert any(
+        "Failed to parse algorithm_runs.arff" in e or "Invalid runstatus" in e
+        for e in res["errors"]
+    )
 
 
 def test_lint_strict_mode_raises(mini_scenario_dir: Path, tmp_path: Path):

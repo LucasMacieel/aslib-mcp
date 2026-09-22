@@ -55,7 +55,9 @@ async def test_mcp_client_call_list_scenarios():
 async def test_mcp_client_call_lint_spec(mini_scenario_dir: Path):
     """Client can invoke aslib_lint_spec over MCP protocol."""
     async with Client(mcp) as client:
-        res = await client.call_tool("aslib_lint_spec", {"scenario_dir": str(mini_scenario_dir)})
+        res = await client.call_tool(
+            "aslib_lint_spec", {"scenario_dir": str(mini_scenario_dir)}
+        )
         assert not res.is_error
         data = res.data
         assert data["is_valid"] is True

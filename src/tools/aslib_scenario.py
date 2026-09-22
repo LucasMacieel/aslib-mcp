@@ -5,7 +5,7 @@ import tempfile
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal, cast
 
 # When running this file directly as a script (e.g. over MCP stdio), ensure
 # this directory does not shadow the installed `aslib_scenario` package.
@@ -215,24 +215,25 @@ def aslib_read_scenario(
             {"description": "Ground truth data table", "path": str(p.resolve())}
         )
 
+    instances = scenario.instances or []
     return {
-        "message": f"Successfully loaded ASlib scenario '{scenario.scenario}' with {len(scenario.instances)} instances.",
+        "message": f"Successfully loaded ASlib scenario '{scenario.scenario}' with {len(instances)} instances.",
         "reference": REFERENCE,
         "artifacts": artifacts,
         "scenario_id": scenario.scenario,
-        "performance_measures": list(scenario.performance_measure),
-        "performance_type": list(scenario.performance_type),
-        "maximize": [bool(m) for m in scenario.maximize],
+        "performance_measures": list(scenario.performance_measure or []),
+        "performance_type": list(scenario.performance_type or []),
+        "maximize": [bool(m) for m in (scenario.maximize or [])],
         "algorithm_cutoff_time": float(scenario.algorithm_cutoff_time)
         if scenario.algorithm_cutoff_time is not None
         else None,
         "features_cutoff_time": float(scenario.features_cutoff_time)
         if scenario.features_cutoff_time is not None
         else None,
-        "algorithms": list(scenario.algorithms),
-        "features": list(scenario.features),
-        "num_instances": len(scenario.instances),
-        "feature_steps": list(scenario.feature_steps),
+        "algorithms": list(scenario.algorithms or []),
+        "features": list(scenario.features or []),
+        "num_instances": len(instances),
+        "feature_steps": list(scenario.feature_steps or []),
     }
 
 
@@ -283,14 +284,23 @@ def aslib_read_csv(
             )
 
     scenario = ASlibScenario()
-    scenario.read_from_csv(
-        perf_fn=str(perf_path),
-        feat_fn=str(feat_path),
-        objective=objective,
-        runtime_cutoff=float(runtime_cutoff),
-        maximize=bool(maximize),
-        cv_fn=str(cv_path_resolved) if cv_path_resolved else None,
-    )
+    if cv_path_resolved is not None:
+        scenario.read_from_csv(
+            perf_fn=str(perf_path),
+            feat_fn=str(feat_path),
+            objective=objective,
+            runtime_cutoff=float(runtime_cutoff),
+            maximize=bool(maximize),
+            cv_fn=str(cv_path_resolved),
+        )
+    else:
+        scenario.read_from_csv(
+            perf_fn=str(perf_path),
+            feat_fn=str(feat_path),
+            objective=objective,
+            runtime_cutoff=float(runtime_cutoff),
+            maximize=bool(maximize),
+        )
 
     out_dir = _get_output_dir(output_dir, prefix="read_csv")
     artifacts = []
@@ -337,19 +347,22 @@ def aslib_read_csv(
         )
 
     num_timeouts = (
-        int((scenario.runstatus_data == "timeout").sum().sum())
+        int(np.sum((scenario.runstatus_data == "timeout").to_numpy()))
         if scenario.runstatus_data is not None
         else 0
     )
 
+    instances = scenario.instances or []
+    algorithms = scenario.algorithms or []
+    features = scenario.features or []
     return {
-        "message": f"Successfully loaded CSV scenario with {len(scenario.instances)} instances and {len(scenario.algorithms)} algorithms.",
+        "message": f"Successfully loaded CSV scenario with {len(instances)} instances and {len(algorithms)} algorithms.",
         "reference": REFERENCE,
         "artifacts": artifacts,
         "scenario_id": scenario.scenario,
-        "algorithms": list(scenario.algorithms),
-        "features": list(scenario.features),
-        "num_instances": len(scenario.instances),
+        "algorithms": list(algorithms),
+        "features": list(features),
+        "num_instances": len(instances),
         "objective": objective,
         "runtime_cutoff": float(runtime_cutoff),
         "maximize": bool(maximize),
@@ -382,6 +395,7 @@ def aslib_get_cv_split(
     if scenario.cv_data is None:
         scenario.create_cv_splits()
 
+    assert scenario.cv_data is not None
     unique_folds = sorted(scenario.cv_data["fold"].unique().tolist())
     if float(fold_index) not in unique_folds:
         raise ValueError(
@@ -486,17 +500,19 @@ def aslib_create_cv_splits(
     scenario = ASlibScenario()
     scenario.read_scenario(str(scen_path))
 
+    instances = scenario.instances or []
     if n_folds < 2:
         raise ValueError(f"Number of folds must be at least 2, got {n_folds}")
-    if n_folds > len(scenario.instances):
+    if n_folds > len(instances):
         raise ValueError(
-            f"Number of folds ({n_folds}) cannot exceed number of instances ({len(scenario.instances)})"
+            f"Number of folds ({n_folds}) cannot exceed number of instances ({len(instances)})"
         )
 
     if seed is not None:
         np.random.seed(seed)
 
     scenario.create_cv_splits(n_folds=n_folds)
+    assert scenario.cv_data is not None
 
     out_dir = _get_output_dir(output_dir, prefix="create_cv")
     p = out_dir / "cv_splits.csv"
@@ -514,11 +530,11 @@ def aslib_create_cv_splits(
     }
 
     return {
-        "message": f"Generated balanced {n_folds}-fold CV split across {len(scenario.instances)} instances.",
+        "message": f"Generated balanced {n_folds}-fold CV split across {len(instances)} instances.",
         "reference": REFERENCE,
         "artifacts": artifacts,
         "n_folds": int(n_folds),
-        "total_instances": len(scenario.instances),
+        "total_instances": len(instances),
         "instances_per_fold": fold_counts,
     }
 
@@ -546,9 +562,10 @@ def aslib_change_perf_measure(
     scenario = ASlibScenario()
     scenario.read_scenario(str(scen_path))
 
-    if measure_name is None and measure_idx is None:
-        raise ValueError("Either measure_name or measure_idx must be specified.")
+    assert scenario.performance_measure is not None
+    assert scenario.performance_data_all is not None
 
+    resolved_idx: int
     if measure_name is not None:
         if measure_name not in scenario.performance_measure:
             raise ValueError(
@@ -556,16 +573,17 @@ def aslib_change_perf_measure(
                 f"Available measures: {scenario.performance_measure}"
             )
         resolved_idx = scenario.performance_measure.index(measure_name)
-    else:
+        scenario.change_perf_measure(measure_name=measure_name)
+    elif measure_idx is not None:
         if measure_idx < 0 or measure_idx >= len(scenario.performance_measure):
             raise ValueError(
                 f"Performance measure index {measure_idx} out of range [0, {len(scenario.performance_measure) - 1}]. "
                 f"Available measures: {scenario.performance_measure}"
             )
         resolved_idx = measure_idx
-
-    # Call upstream method
-    scenario.change_perf_measure(measure_idx=measure_idx, measure_name=measure_name)
+        scenario.change_perf_measure(measure_idx=measure_idx)
+    else:
+        raise ValueError("Either measure_name or measure_idx must be specified.")
 
     # Handle upstream behavior where measure_idx=0 evaluates to falsy in `if measure_idx:`
     if (
@@ -575,10 +593,9 @@ def aslib_change_perf_measure(
         scenario.performance_data = scenario.performance_data_all[resolved_idx]
 
     active_name = scenario.performance_measure[resolved_idx]
-    means = {
-        algo: float(scenario.performance_data[algo].mean())
-        for algo in scenario.algorithms
-    }
+    assert scenario.performance_data is not None
+    algorithms = scenario.algorithms or []
+    means = {algo: float(scenario.performance_data[algo].mean()) for algo in algorithms}
 
     out_dir = _get_output_dir(output_dir, prefix=f"perf_measure_{active_name}")
     p = out_dir / f"performance_{active_name}.csv"
@@ -595,7 +612,7 @@ def aslib_change_perf_measure(
         "reference": REFERENCE,
         "artifacts": artifacts,
         "active_measure_name": active_name,
-        "active_measure_index": int(resolved_idx),
+        "active_measure_index": resolved_idx,
         "available_measures": list(scenario.performance_measure),
         "mean_performance_per_algorithm": means,
     }
@@ -621,6 +638,13 @@ def aslib_validate_scenario(
     scenario = ASlibScenario()
     scenario.CHECK_VALID = False
     scenario.read_scenario(str(scen_path))
+
+    assert scenario.instances is not None
+    assert scenario.performance_data_all is not None
+    assert scenario.algorithms is not None
+    assert scenario.features is not None
+    assert scenario.performance_type is not None
+    assert scenario.maximize is not None
 
     # Pre-validation contract checks to prevent sys.exit in upstream check_data
     validation_messages = []
@@ -658,8 +682,8 @@ def aslib_validate_scenario(
     par10_count = 0
     maximization_inverted = False
     for perf_type_i, perf_type in enumerate(scenario.performance_type):
-        if perf_type == "runtime":
-            par10_count += int((scenario.runstatus_data != "ok").sum().sum())
+        if perf_type == "runtime" and scenario.runstatus_data is not None:
+            par10_count += int(np.sum((scenario.runstatus_data != "ok").to_numpy()))
         elif perf_type == "solution_quality" and scenario.maximize[perf_type_i]:
             maximization_inverted = True
 
@@ -668,8 +692,13 @@ def aslib_validate_scenario(
     scenario.performance_data = scenario.performance_data_all[0]
 
     if par10_count > 0:
+        penalty = (
+            scenario.algorithm_cutoff_time * 10
+            if scenario.algorithm_cutoff_time is not None
+            else "N/A"
+        )
         validation_messages.append(
-            f"Applied PAR10 penalty ({scenario.algorithm_cutoff_time * 10}) to {par10_count} non-OK runs."
+            f"Applied PAR10 penalty ({penalty}) to {par10_count} non-OK runs."
         )
     if maximization_inverted:
         validation_messages.append(
@@ -679,23 +708,25 @@ def aslib_validate_scenario(
     out_dir = _get_output_dir(output_dir, prefix="validate_scenario")
     artifacts = []
 
-    p_perf = out_dir / "validated_performance.csv"
-    scenario.performance_data.to_csv(p_perf)
-    artifacts.append(
-        {
-            "description": "Validated and adjusted performance matrix",
-            "path": str(p_perf.resolve()),
-        }
-    )
+    if scenario.performance_data is not None:
+        p_perf = out_dir / "validated_performance.csv"
+        scenario.performance_data.to_csv(p_perf)
+        artifacts.append(
+            {
+                "description": "Validated and adjusted performance matrix",
+                "path": str(p_perf.resolve()),
+            }
+        )
 
-    p_runstatus = out_dir / "validated_runstatus.csv"
-    scenario.runstatus_data.to_csv(p_runstatus)
-    artifacts.append(
-        {
-            "description": "Validated algorithm runstatus matrix",
-            "path": str(p_runstatus.resolve()),
-        }
-    )
+    if scenario.runstatus_data is not None:
+        p_runstatus = out_dir / "validated_runstatus.csv"
+        scenario.runstatus_data.to_csv(p_runstatus)
+        artifacts.append(
+            {
+                "description": "Validated algorithm runstatus matrix",
+                "path": str(p_runstatus.resolve()),
+            }
+        )
 
     return {
         "message": f"Successfully validated scenario '{scenario.scenario}' ({len(scenario.instances)} instances).",
@@ -950,7 +981,7 @@ class _ToolManagerCompat:
         ]
 
 
-aslib_scenario_mcp._tool_manager = _ToolManagerCompat(aslib_scenario_mcp)
+cast(Any, aslib_scenario_mcp)._tool_manager = _ToolManagerCompat(aslib_scenario_mcp)
 
 
 if __name__ == "__main__":

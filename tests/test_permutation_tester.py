@@ -61,7 +61,9 @@ def test_strictly_separated_vectors_significant():
     v1 = [1.0] * 30
     v2 = [10.0] * 30
 
-    res = tester.run_test(v1, v2, permutations=1000, name1="algo_fast", name2="algo_slow")
+    res = tester.run_test(
+        v1, v2, permutations=1000, name1="algo_fast", name2="algo_slow"
+    )
     assert res["p_value"] < 0.01
     assert res["is_significant"] is True
     assert res["winner"] == "algo_fast"

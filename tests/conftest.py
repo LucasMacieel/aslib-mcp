@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Literal
 
 import pandas as pd
 import pytest
@@ -82,12 +83,14 @@ def synthetic_data(tmp_path: Path) -> dict[str, Any]:
 
 
 @pytest.fixture
-def make_scenario(synthetic_data: dict[str, Any], tmp_path: Path) -> Callable[..., Path]:
+def make_scenario(
+    synthetic_data: dict[str, Any], tmp_path: Path
+) -> Callable[..., Path]:
     """Factory fixture to create customized synthetic ASlib scenarios in temporary directories."""
 
     def _create(
         scenario_id: str = "SYNTHETIC-SCENARIO",
-        objective: str = "runtime",
+        objective: Literal["runtime", "solution_quality"] = "runtime",
         maximize: bool = False,
         cutoff: float = 10.0,
         with_costs: bool = True,

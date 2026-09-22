@@ -54,8 +54,8 @@ class SelectorEvaluator:
             if self.scenario.performance_type
             else "runtime"
         )
-        self.instances = list(self.scenario.instances)
-        self.algorithms = list(self.scenario.algorithms)
+        self.instances = list(self.scenario.instances or [])
+        self.algorithms = list(self.scenario.algorithms or [])
 
     def _get_feature_cost_per_instance(self) -> dict[str, float]:
         """Calculates total feature extraction cost per instance for default feature steps."""
@@ -89,6 +89,8 @@ class SelectorEvaluator:
         )
 
         perf_matrix = self.scenario.performance_data
+        if perf_matrix is None:
+            raise ValueError("Scenario has no performance data loaded.")
         runstatus_matrix = self.scenario.runstatus_data
 
         # Determine baselines: SBS and VBS
