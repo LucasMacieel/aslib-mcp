@@ -34,24 +34,29 @@ def test_custom_cache_dir_env(monkeypatch, tmp_path):
 
 
 def test_list_scenarios_filtering():
+    # 1. Total listing
     all_res = list_scenarios()
     assert all_res["total_scenarios"] >= 40
     assert len(all_res["scenarios"]) <= 50
 
+    # 2. Domain filtering: ASP
     asp_res = list_scenarios(domain="ASP")
     assert asp_res["matched_scenarios"] >= 1
     asp_ids = [s["scenario_id"] for s in asp_res["scenarios"]]
     assert "ASP-POTASSCO" in asp_ids
 
+    # 3. Domain filtering: SAT
     sat_res = list_scenarios(domain="SAT")
     assert sat_res["matched_scenarios"] >= 10
     for s in sat_res["scenarios"]:
         assert s["domain"] == "SAT" or "SAT" in s["scenario_id"].upper()
 
+    # 4. Search query
     qbf_res = list_scenarios(search="QBF-2016")
     assert qbf_res["matched_scenarios"] >= 1
     assert any(s["scenario_id"] == "QBF-2016" for s in qbf_res["scenarios"])
 
+    # 5. Objective filtering
     rt_res = list_scenarios(objective="runtime")
     assert rt_res["matched_scenarios"] >= 30
 

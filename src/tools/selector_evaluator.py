@@ -62,6 +62,7 @@ class SelectorEvaluator:
         costs = {inst: 0.0 for inst in self.instances}
         if self.scenario.feature_cost_data is not None:
             cost_df = self.scenario.feature_cost_data
+            # Identify columns corresponding to default feature steps or total
             for inst in self.instances:
                 if inst in cost_df.index:
                     row = cost_df.loc[inst]
@@ -90,6 +91,7 @@ class SelectorEvaluator:
         perf_matrix = self.scenario.performance_data
         runstatus_matrix = self.scenario.runstatus_data
 
+        # Determine baselines: SBS and VBS
         baselines_perf: dict[str, dict[str, float]] = {}
 
         # 1. Compute VBS (Virtual Best Solver)
@@ -145,6 +147,7 @@ class SelectorEvaluator:
 
         candidate_cols = [str(c).strip() for c in pred_df.columns]
 
+        # Check if single column without name
         if len(candidate_cols) == 1 and candidate_cols[0].lower() in (
             "algorithm",
             "algo",
@@ -161,6 +164,7 @@ class SelectorEvaluator:
 
             for inst in self.instances:
                 if inst not in col_data.index:
+                    # Missing prediction: penalty
                     final_time = (
                         self.cutoff * self.par_factor if not self.maximize else 0.0
                     )
@@ -169,6 +173,7 @@ class SelectorEvaluator:
                     val = col_data.loc[inst]
                     f_cost = feat_costs.get(inst, 0.0)
 
+                    # Check if val is an algorithm name
                     if isinstance(val, str) and val in self.algorithms:
                         base_time = float(perf_matrix.loc[inst, val])
                         status = (
@@ -178,6 +183,7 @@ class SelectorEvaluator:
                             else "ok"
                         )
                     else:
+                        # Assume precomputed numeric performance
                         try:
                             base_time = float(val)
                             status = "ok" if base_time < self.cutoff else "timeout"
@@ -226,6 +232,7 @@ class SelectorEvaluator:
                 ),
             }
 
+        # Add baselines to stats and vectors
         for b_name, b_dict in baselines_perf.items():
             b_vec = []
             b_timeouts = 0
@@ -254,6 +261,7 @@ class SelectorEvaluator:
                 ),
             }
 
+        # Ranking
         sorted_stats = sorted(
             selector_stats.values(),
             key=lambda x: x["par_score"],
@@ -262,6 +270,7 @@ class SelectorEvaluator:
         for rank_idx, stat in enumerate(sorted_stats, start=1):
             stat["rank"] = rank_idx
 
+        # Permutation significance test against the top selector (excluding VBS oracle)
         top_selector_stat = None
         for s in sorted_stats:
             if not s["name"].startswith("VBS"):
@@ -300,6 +309,7 @@ class SelectorEvaluator:
                     }
                 )
 
+        # Save artifacts
         artifacts = []
         if output_dir is not None:
             out_path = Path(output_dir).resolve()

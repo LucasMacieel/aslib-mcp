@@ -55,6 +55,7 @@ def is_cache_initialized(cache_dir: Path | None = None) -> bool:
     target = cache_dir or get_cache_dir()
     if not target.is_dir():
         return False
+    # Check if there is at least one folder with description.txt
     for item in target.iterdir():
         if (
             item.is_dir()
@@ -66,7 +67,11 @@ def is_cache_initialized(cache_dir: Path | None = None) -> bool:
 
 
 def ensure_cache(cache_dir: Path | None = None, force_clone: bool = False) -> Path:
-    """Ensure the ASlib scenario cache is initialized via shallow git clone."""
+    """Ensure the ASlib scenario cache is initialized via shallow git clone.
+
+    If cache exists and is valid, returns the cache directory immediately.
+    Raises RuntimeError if cloning fails due to network or missing git.
+    """
     target = cache_dir or get_cache_dir()
     if not force_clone and is_cache_initialized(target):
         return target
@@ -95,6 +100,7 @@ def sync_repository(
 
     git_dir = target / ".git"
     if not git_dir.is_dir():
+        # Directory exists but not a git clone; re-index only
         indexed = scan_and_index_scenarios(target, force_reindex=True)
         return {
             "status": "reindexed",
@@ -291,7 +297,12 @@ def list_scenarios(
 def resolve_scenario_dir(
     scenario_dir_or_id: str, cache_dir: Path | None = None
 ) -> Path:
-    """Resolve a directory path or Scenario ID into an absolute Path to a scenario directory."""
+    """Resolve a directory path or Scenario ID into an absolute Path to a scenario directory.
+
+    1. If scenario_dir_or_id is an existing local directory, returns it directly.
+    2. Otherwise, matches against Scenario IDs in the Scenario Cache (exact or case-insensitive).
+    3. If not found, raises FileNotFoundError with fuzzy suggestions.
+    """
     cleaned = scenario_dir_or_id.strip()
     direct_path = Path(cleaned).expanduser().resolve()
     if direct_path.is_dir():
@@ -300,18 +311,22 @@ def resolve_scenario_dir(
     target = cache_dir or ensure_cache()
     indexed = scan_and_index_scenarios(target)
 
+    # 1. Exact match against indexed scenario IDs
     if cleaned in indexed:
         return Path(indexed[cleaned]["scenario_dir"])
 
+    # 2. Case-insensitive match
     cleaned_lower = cleaned.lower()
     for sid, sinfo in indexed.items():
         if sid.lower() == cleaned_lower:
             return Path(sinfo["scenario_dir"])
 
+    # 3. Direct directory check inside cache_dir
     candidate = target / cleaned
     if candidate.is_dir() and (candidate / "description.txt").is_file():
         return candidate.resolve()
 
+    # 4. Fuzzy match suggestion
     all_sids = list(indexed.keys())
     close_matches = difflib.get_close_matches(cleaned, all_sids, n=3, cutoff=0.35)
     if close_matches:

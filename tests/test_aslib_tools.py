@@ -52,6 +52,7 @@ def test_mcp_tool_aslib_lint_spec(mini_scenario_dir: Path):
 
 def test_mcp_tool_aslib_read_csv(tmp_path: Path):
     """aslib_read_csv ingests raw tabular CSVs and writes scenario files."""
+    # 10 instances to satisfy default 10-fold CV partitioning
     instances = [f"inst_{i}" for i in range(10)]
     algos = ["algo_1", "algo_2"]
     feats = ["f1", "f2"]
@@ -122,7 +123,7 @@ def test_mcp_tool_aslib_change_perf_measure(mini_scenario_dir: Path, tmp_path: P
 def test_mcp_tool_aslib_export_scenario(synthetic_data: dict[str, Any], tmp_path: Path):
     """aslib_export_scenario exports tabular CSV into full ASlib 2.0 scenario."""
     out_dir = tmp_path / "exported_mcp_scenario"
-    res = export_aslib_scenario(
+    res = aslib_export_scenario(
         perf_csv_path=str(synthetic_data["perf_csv"]),
         feat_csv_path=str(synthetic_data["feat_csv"]),
         scenario_id="MCP-EXPORT",

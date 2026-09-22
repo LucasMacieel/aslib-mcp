@@ -21,6 +21,8 @@ def synthetic_data(tmp_path: Path) -> dict[str, Any]:
     algorithms = ["algo_a", "algo_b", "algo_c"]
     features = ["feat_1", "feat_2"]
 
+    # Algorithm performance: algo_b is SBS (all solved, low runtime)
+    # algo_a has 1 timeout on inst_4, algo_c has 2 timeouts on inst_4 and inst_5
     perf_df = pd.DataFrame(
         [
             [1.0, 2.0, 5.0],
@@ -35,6 +37,7 @@ def synthetic_data(tmp_path: Path) -> dict[str, Any]:
     perf_csv = data_dir / "performance.csv"
     perf_df.to_csv(perf_csv)
 
+    # Instance features
     feat_df = pd.DataFrame(
         [
             [0.1, 10.5],
@@ -49,6 +52,7 @@ def synthetic_data(tmp_path: Path) -> dict[str, Any]:
     feat_csv = data_dir / "features.csv"
     feat_df.to_csv(feat_csv)
 
+    # Feature costs
     costs_df = pd.DataFrame(
         [
             [0.05, 0.15],

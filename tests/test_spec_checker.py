@@ -94,6 +94,7 @@ def test_lint_instance_mismatch_across_files(mini_scenario_dir: Path, tmp_path: 
     with open(runs_path, "r", encoding="utf-8") as f:
         runs_data = arff.load(f)
 
+    # Append run for phantom instance
     runs_data["data"].append(["inst_phantom", 1, "algo_a", 2.0, "ok"])
     with open(runs_path, "w", encoding="utf-8") as f:
         arff.dump(runs_data, f)
@@ -112,6 +113,7 @@ def test_lint_invalid_runstatus_rejected(mini_scenario_dir: Path, tmp_path: Path
     with open(runs_path, "r", encoding="utf-8") as f:
         runs_data = arff.load(f)
 
+    # Inject unknown status
     runs_data["data"][0][-1] = "exploded"
     with open(runs_path, "w", encoding="utf-8") as f:
         arff.dump(runs_data, f)

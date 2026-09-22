@@ -46,9 +46,11 @@ def test_vbs_and_sbs_exact_baselines(mini_scenario_dir: Path, predictions_csv: P
     )
 
     stats = {s["name"]: s for s in res["rankings"]}
+    # VBS mean across [1.0, 3.0, 2.0, 5.0, 2.0] = 13.0 / 5 = 2.6
     assert stats["VBS"]["par_score"] == pytest.approx(2.6, rel=1e-3)
     assert stats["VBS"]["timeouts_count"] == 0
 
+    # SBS is algo_b: [2.0, 3.0, 6.0, 5.0, 4.0] = 20.0 / 5 = 4.0
     sbs_key = [k for k in stats if k.startswith("SBS")][0]
     assert "algo_b" in sbs_key
     assert stats[sbs_key]["par_score"] == pytest.approx(4.0, rel=1e-3)
@@ -61,23 +63,29 @@ def test_selector_evaluation_with_and_without_feature_costs(
     """Verifies selector PAR10 scores and the impact of feature extraction costs."""
     evaluator = SelectorEvaluator(mini_scenario_dir, par_factor=10.0)
 
+    # 1. Without feature costs
     res_no_cost = evaluator.evaluate(
         predictions_csv_path=predictions_csv,
         include_feature_costs=False,
         run_significance_tests=False,
     )
     selectors_no_cost = {s["name"]: s for s in res_no_cost["rankings"]}
+    # perfect_selector matches VBS exactly (2.6)
     assert selectors_no_cost["perfect_selector"]["par_score"] == pytest.approx(2.6, rel=1e-3)
+    # static_sbs_selector matches SBS exactly (4.0)
     assert selectors_no_cost["static_sbs_selector"]["par_score"] == pytest.approx(4.0, rel=1e-3)
+    # poor_selector has 2 timeouts on inst_4 and inst_5: 5+8+6+100+100 = 219 / 5 = 43.8
     assert selectors_no_cost["poor_selector"]["par_score"] == pytest.approx(43.8, rel=1e-3)
     assert selectors_no_cost["poor_selector"]["timeouts_count"] == 2
 
+    # 2. With feature costs (feat_1 cost 0.05 + feat_2 cost 0.15 = 0.20 per instance)
     res_cost = evaluator.evaluate(
         predictions_csv_path=predictions_csv,
         include_feature_costs=True,
         run_significance_tests=False,
     )
     selectors_cost = {s["name"]: s for s in res_cost["rankings"]}
+    # 2.6 + 0.20 = 2.80
     assert selectors_cost["perfect_selector"]["par_score"] == pytest.approx(2.8, rel=1e-3)
 
 
@@ -92,8 +100,12 @@ def test_selector_rankings_and_winner(mini_scenario_dir: Path, predictions_csv: 
         output_dir=out_dir,
     )
 
+    ranking = res["rankings"]
+    # VBS is ranked #1 (score 2.6), perfect_selector is #2 (score 2.6) or #1 among selectors
     assert res["top_selector"] == "perfect_selector"
     assert len(res["significance_tests"]) >= 1
+
+    # Check artifacts
     assert len(res["artifacts"]) >= 2
     for art in res["artifacts"]:
         assert Path(art["path"]).is_file()

@@ -35,6 +35,7 @@ def test_export_runtime_scenario_full_roundtrip(synthetic_data: dict[str, Any], 
     assert len(res["features"]) == 2
     assert any(f.endswith("cv.arff") for f in res["created_files"])
 
+    # 1. Verify files exist on disk
     for f in [
         "description.txt",
         "algorithm_runs.arff",
@@ -45,10 +46,12 @@ def test_export_runtime_scenario_full_roundtrip(synthetic_data: dict[str, Any], 
     ]:
         assert (out_dir / f).is_file()
 
+    # 2. Spec linting must pass with 0 errors
     lint = lint_scenario_spec(out_dir)
     assert lint["is_valid"] is True
     assert len(lint["errors"]) == 0
 
+    # 3. Must load cleanly into official ASlibScenario
     scen = ASlibScenario()
     scen.read_scenario(str(out_dir))
     assert scen.scenario == "EXPORTED-TEST"
@@ -113,11 +116,13 @@ def test_export_cv_partition_integrity(synthetic_data: dict[str, Any], tmp_path:
     with open(out_dir / "cv.arff", "r", encoding="utf-8") as f:
         cv_data = arff.load(f)
 
+    # cv.arff format: instance_id, repetition, fold
     assigned_instances = [row[0] for row in cv_data["data"]]
     folds = {row[2] for row in cv_data["data"]}
 
+    # All instances accounted for
     assert set(assigned_instances) == set(synthetic_data["instances"])
-    assert len(assigned_instances) == len(synthetic_data["instances"])
+    assert len(assigned_instances) == len(synthetic_data["instances"])  # No duplicates
     assert len(folds) == 3
 
 

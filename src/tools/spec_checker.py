@@ -122,6 +122,7 @@ class ASlibSpecLinter:
 
         self.metadata = desc
 
+        # Required fields in description.txt
         req_keys = [
             "scenario_id",
             "performance_measures",
@@ -184,6 +185,7 @@ class ASlibSpecLinter:
                 "'features_cutoff_time' not specified in description.txt."
             )
 
+        # Check feature steps definition
         feature_steps = desc.get("feature_steps")
         if not feature_steps or not isinstance(feature_steps, dict):
             self.errors.append(
@@ -461,7 +463,15 @@ class ASlibSpecLinter:
 def lint_scenario_spec(
     scenario_dir: str | Path, strict: bool = False
 ) -> dict[str, Any]:
-    """Lints an ASlib benchmark directory against the official format specification."""
+    """Lints an ASlib benchmark directory against the official format specification.
+
+    Args:
+        scenario_dir: Path to the ASlib scenario directory.
+        strict: If True, raises ValueError when any fatal errors are detected.
+
+    Returns:
+        Structured dictionary with is_valid, errors, warnings, recommendations, checked_files.
+    """
     linter = ASlibSpecLinter(scenario_dir)
     report = linter.lint()
     if strict and not report["is_valid"]:

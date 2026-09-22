@@ -7,10 +7,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated, Literal
 
+# When running this file directly as a script (e.g. over MCP stdio), ensure
+# this directory does not shadow the installed `aslib_scenario` package.
 _this_dir = str(Path(__file__).resolve().parent)
 if sys.path and sys.path[0] == _this_dir:
     sys.path.pop(0)
 
+# Ensure mcp server package root is in sys.path
 _pkg_root = str(Path(__file__).resolve().parent.parent.parent)
 if _pkg_root not in sys.path:
     sys.path.insert(0, _pkg_root)
@@ -134,7 +137,9 @@ def aslib_read_scenario(
         "Base directory for output artifacts; a unique subdirectory is created",
     ] = None,
 ) -> dict:
-    """Read and parse an ASlib benchmark scenario directory into tabular data structures."""
+    """Read and parse an ASlib benchmark scenario directory into tabular data structures.
+    Input is a scenario directory path or Scenario ID; output is scenario metadata and exported CSV artifacts.
+    """
     scen_path = resolve_scenario_dir(scenario_dir)
 
     required_files = [
@@ -258,7 +263,9 @@ def aslib_read_csv(
         "Base directory for output artifacts; a unique subdirectory is created",
     ] = None,
 ) -> dict:
-    """Create an ASlib scenario from tabular performance and feature CSV files."""
+    """Create an ASlib scenario from tabular performance and feature CSV files.
+    Input is performance and feature CSV paths; output is scenario metadata and exported CSV artifacts.
+    """
     perf_path = Path(perf_csv_path).resolve()
     if not perf_path.is_file():
         raise FileNotFoundError(f"Performance CSV file not found: {perf_path}")
@@ -364,7 +371,9 @@ def aslib_get_cv_split(
         "Base directory for output artifacts; a unique subdirectory is created",
     ] = None,
 ) -> dict:
-    """Partition an ASlib scenario into disjoint training and test splits for a specified fold."""
+    """Partition an ASlib scenario into disjoint training and test splits for a specified fold.
+    Input is a scenario directory and fold index; output is partition metadata and exported split CSVs.
+    """
     scen_path = resolve_scenario_dir(scenario_dir)
 
     scenario = ASlibScenario()
@@ -469,7 +478,9 @@ def aslib_create_cv_splits(
         "Base directory for output artifacts; a unique subdirectory is created",
     ] = None,
 ) -> dict:
-    """Generate balanced cross-validation fold assignments for instances in an ASlib scenario."""
+    """Generate balanced cross-validation fold assignments for instances in an ASlib scenario.
+    Input is scenario directory or Scenario ID and fold count; output is fold statistics and exported fold CSV.
+    """
     scen_path = resolve_scenario_dir(scenario_dir)
 
     scenario = ASlibScenario()
@@ -527,7 +538,9 @@ def aslib_change_perf_measure(
         "Base directory for output artifacts; a unique subdirectory is created",
     ] = None,
 ) -> dict:
-    """Switch the active performance measure in a multi-metric ASlib scenario."""
+    """Switch the active performance measure in a multi-metric ASlib scenario.
+    Input is scenario directory or Scenario ID and target measure name or index; output is updated metric metadata and CSV artifact.
+    """
     scen_path = resolve_scenario_dir(scenario_dir)
 
     scenario = ASlibScenario()
@@ -551,8 +564,10 @@ def aslib_change_perf_measure(
             )
         resolved_idx = measure_idx
 
+    # Call upstream method
     scenario.change_perf_measure(measure_idx=measure_idx, measure_name=measure_name)
 
+    # Handle upstream behavior where measure_idx=0 evaluates to falsy in `if measure_idx:`
     if (
         resolved_idx == 0
         or scenario.performance_data is not scenario.performance_data_all[resolved_idx]
@@ -597,13 +612,17 @@ def aslib_validate_scenario(
         "Base directory for output artifacts; a unique subdirectory is created",
     ] = None,
 ) -> dict:
-    """Validate ASlib scenario integrity, align instance indices, and apply PAR10 or sign adjustments."""
+    """Validate ASlib scenario integrity, align instance indices, and apply PAR10 or sign adjustments.
+    Input is a scenario directory path or Scenario ID; output is validation diagnostics and adjusted performance CSV artifacts.
+    """
     scen_path = resolve_scenario_dir(scenario_dir)
 
+    # Load with CHECK_VALID=False so we can explicitly inspect and invoke check_data
     scenario = ASlibScenario()
     scenario.CHECK_VALID = False
     scenario.read_scenario(str(scen_path))
 
+    # Pre-validation contract checks to prevent sys.exit in upstream check_data
     validation_messages = []
     for perf_type_i, perf_type in enumerate(scenario.performance_type):
         if pd.isnull(scenario.performance_data_all[perf_type_i]).sum().sum() > 0:
@@ -635,6 +654,7 @@ def aslib_validate_scenario(
     validation_messages.append("Instance alignment verified across all data matrices.")
     validation_messages.append("No missing entries found in performance data.")
 
+    # Count runs that require PAR10 imputation before check_data is called
     par10_count = 0
     maximization_inverted = False
     for perf_type_i, perf_type in enumerate(scenario.performance_type):
@@ -643,6 +663,7 @@ def aslib_validate_scenario(
         elif perf_type == "solution_quality" and scenario.maximize[perf_type_i]:
             maximization_inverted = True
 
+    # Call upstream check_data
     scenario.check_data()
     scenario.performance_data = scenario.performance_data_all[0]
 
@@ -702,7 +723,11 @@ def aslib_lint_spec(
         "If True, raises a ValueError on any fatal specification errors instead of returning diagnostic report",
     ] = False,
 ) -> dict:
-    """Validate an ASlib benchmark directory against the official format specification."""
+    """Validate an ASlib benchmark directory against the official format specification.
+
+    Checks directory layout, description.txt YAML schema, ARFF headers, feature step
+    DAG consistency, and instance alignment across all tables.
+    """
     scen_path = resolve_scenario_dir(scenario_dir)
     report = lint_scenario_spec(scenario_dir=str(scen_path), strict=strict)
     report["reference"] = ASLIB_SPEC_REFERENCE
@@ -750,7 +775,11 @@ def aslib_export_scenario(
     ] = 10,
     seed: Annotated[int | None, "Random seed for reproducible fold generation"] = None,
 ) -> dict:
-    """Export tabular CSV benchmarks into a fully compliant, self-contained ASlib scenario directory."""
+    """Export tabular CSV benchmarks into a fully compliant, self-contained ASlib scenario directory.
+
+    Generates description.txt, algorithm_runs.arff, feature_values.arff,
+    feature_runstatus.arff, and optional cv.arff / feature_costs.arff.
+    """
     if output_dir is not None:
         target_dir = Path(output_dir).resolve()
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -820,7 +849,11 @@ def aslib_permutation_test(
     maximize: Annotated[bool, "Whether higher performance values are better"] = False,
     seed: Annotated[int | None, "Random seed for reproducible permutations"] = None,
 ) -> dict:
-    """Run a paired permutation significance test between two algorithms or selectors."""
+    """Run a paired permutation significance test between two algorithms or selectors.
+
+    Can be invoked either with two raw performance lists (vec1, vec2) or backed
+    directly by an ASlib scenario directory (scenario_dir, algo1, algo2).
+    """
     if scenario_dir is not None:
         if not algo1 or not algo2:
             raise ValueError(
@@ -884,7 +917,12 @@ def aslib_evaluate_selectors(
         "Base directory for output artifacts; a unique subdirectory is created if omitted",
     ] = None,
 ) -> dict:
-    """Benchmark and rank algorithm selectors against an ASlib scenario and standard baselines."""
+    """Benchmark and rank algorithm selectors against an ASlib scenario and standard baselines.
+
+    Calculates PAR10 scores (with optional feature computation costs), solved rates,
+    Single Best Solver (SBS) and Virtual Best Solver (VBS) baselines, and runs
+    statistical permutation tests against the winning selector.
+    """
     out_dir = _get_output_dir(output_dir, prefix="evaluate_selectors")
     scen_path = resolve_scenario_dir(scenario_dir)
     evaluator = SelectorEvaluator(scenario_dir=str(scen_path), par_factor=par_factor)
