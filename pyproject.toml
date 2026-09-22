@@ -1,0 +1,43 @@
+[project]
+name = "aslib-mcp"
+version = "0.1.0"
+description = "FastMCP server for ASlib (Algorithm Selection Library) scenarios"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aslib-scenario @ git+https://github.com/mlindauer/ASlibScenario.git@c785d4ae524dd0f4624d4092eea62a05ee2830d4",
+    "fastmcp==4.0.3",
+    "liac-arff==2.5.0",
+    "numpy==2.5.3",
+    "pandas==3.0.6",
+    "pyyaml==6.0.3",
+    "scikit-learn==1.9.1",
+    "scipy==1.18.1",
+]
+
+[project.scripts]
+aslib-mcp = "src.aslib_mcp:mcp.run"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.8.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: tests requiring real ASlib scenario cache",
+]
+filterwarnings = [
+    "ignore:The 'warn' method is deprecated:DeprecationWarning",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
