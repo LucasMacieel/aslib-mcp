@@ -54,6 +54,21 @@ class PermutationTester:
         """Runs the paired permutation test."""
         v1 = np.asarray(vec1, dtype=float).copy()
         v2 = np.asarray(vec2, dtype=float).copy()
+        if (
+            v1.ndim != 1
+            or v2.ndim != 1
+            or not np.isfinite(v1).all()
+            or not np.isfinite(v2).all()
+        ):
+            raise ValueError("Performance vectors must be one-dimensional and finite")
+        if not 0 < alpha < 1 or permutations < 2:
+            raise ValueError(
+                "alpha must be between 0 and 1 and permutations at least 2"
+            )
+        if cutoff is not None and (not np.isfinite(cutoff) or cutoff <= 0):
+            raise ValueError("Cutoff must be finite and positive")
+        if not np.isfinite(par_factor) or par_factor <= 0:
+            raise ValueError("PAR factor must be finite and positive")
 
         if len(v1) != len(v2):
             raise ValueError(
@@ -191,6 +206,10 @@ def permutation_test_scenario(
         else None
     )
     maximize = bool(scen.maximize[0]) if scen.maximize else False
+    if maximize:
+        vec1, vec2 = -vec1, -vec2
+    if scen.performance_type[0] != "runtime":
+        cutoff = None
 
     tester = PermutationTester(seed=seed)
     return tester.run_test(

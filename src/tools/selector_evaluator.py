@@ -13,12 +13,13 @@ import tempfile
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from aslib_scenario.aslib_scenario import ASlibScenario
 
+from src.tools.csv_tables import read_matrix_csv
 from src.tools.permutation_tester import PermutationTester
 
 
@@ -31,6 +32,8 @@ class SelectorEvaluator:
         par_factor: float = 10.0,
     ):
         self.scenario_dir = Path(scenario_dir).resolve()
+        if not np.isfinite(par_factor) or par_factor <= 0:
+            raise ValueError("PAR factor must be finite and positive")
         self.par_factor = par_factor
 
         self.scenario = ASlibScenario()
@@ -57,17 +60,53 @@ class SelectorEvaluator:
         self.instances = list(self.scenario.instances or [])
         self.algorithms = list(self.scenario.algorithms or [])
 
-    def _get_feature_cost_per_instance(self) -> dict[str, float]:
-        """Calculates total feature extraction cost per instance for default feature steps."""
-        costs = {inst: 0.0 for inst in self.instances}
-        if self.scenario.feature_cost_data is not None:
-            cost_df = self.scenario.feature_cost_data
-            # Identify columns corresponding to default feature steps or total
-            for inst in self.instances:
-                if inst in cost_df.index:
-                    row = cost_df.loc[inst]
-                    costs[inst] = float(np.sum(np.nan_to_num(row.values, nan=0.0)))
-        return costs
+    def _feature_processing(self) -> tuple[dict[str, float], set[str]]:
+        """Charge default steps and dependencies, stopping on feature presolving."""
+        groups = self.scenario.feature_group_dict
+        ordered: list[str] = []
+        visiting: set[str] = set()
+
+        def visit(step):
+            if step in visiting:
+                raise ValueError("Feature dependency cycle")
+            if step in ordered:
+                return
+            if step not in groups:
+                raise ValueError(f"Undefined feature step: {step}")
+            visiting.add(step)
+            for dep in groups[step].get("requires", []) or []:
+                visit(dep)
+            visiting.remove(step)
+            ordered.append(step)
+
+        for step in self.scenario.feature_steps_default or self.scenario.feature_steps:
+            visit(step)
+        costs = dict.fromkeys(self.instances, 0.0)
+        presolved = set()
+        cost_df = self.scenario.feature_cost_data
+        statuses = self.scenario.feature_runstatus_data
+        for inst in self.instances:
+            for step in ordered:
+                if cost_df is not None:
+                    if step not in cost_df or inst not in cost_df.index:
+                        raise ValueError(f"Missing feature cost for {inst}/{step}")
+                    value = float(cost_df.loc[inst, step])
+                    if not np.isfinite(value) or value < 0:
+                        raise ValueError(
+                            f"Unknown or invalid feature cost for {inst}/{step}"
+                        )
+                    costs[inst] += value
+                if (
+                    statuses is not None
+                    and str(statuses.loc[inst, step]).lower() == "presolved"
+                ):
+                    if cost_df is None:
+                        raise ValueError(
+                            "Presolved runtime evaluation requires feature costs"
+                        )
+                    presolved.add(inst)
+                    break
+        return costs, presolved
 
     def evaluate(
         self,
@@ -75,240 +114,174 @@ class SelectorEvaluator:
         include_feature_costs: bool = True,
         run_significance_tests: bool = True,
         output_dir: str | Path | None = None,
+        input_mode: Literal[
+            "algorithm_selections", "measured_performance"
+        ] = "algorithm_selections",
     ) -> dict[str, Any]:
-        """Evaluates selectors from predictions CSV."""
+        """Evaluate measured outcomes of selections, or explicitly supplied measurements.
+
+        Numeric predictions are not observed outcomes. In measured_performance mode
+        the caller supplies original-scale measurements, including feature costs
+        only when include_feature_costs=False.
+        """
+        if input_mode not in ("algorithm_selections", "measured_performance"):
+            raise ValueError("Unknown evaluation input_mode")
         pred_path = Path(predictions_csv_path).resolve()
         if not pred_path.is_file():
             raise FileNotFoundError(f"Predictions CSV not found: {pred_path}")
-
-        pred_df = pd.read_csv(pred_path, index_col=0)
+        pred_df = read_matrix_csv(pred_path, strings=True)
         pred_df.index = pred_df.index.astype(str).str.strip()
-
-        feat_costs = (
-            self._get_feature_cost_per_instance() if include_feature_costs else {}
-        )
-
-        perf_matrix = self.scenario.performance_data
-        if perf_matrix is None:
-            raise ValueError("Scenario has no performance data loaded.")
-        runstatus_matrix = self.scenario.runstatus_data
-
-        # Determine baselines: SBS and VBS
-        baselines_perf: dict[str, dict[str, float]] = {}
-
-        # 1. Compute VBS (Virtual Best Solver)
-        vbs_perfs = {}
-        for inst in self.instances:
-            if inst in perf_matrix.index:
-                row = perf_matrix.loc[inst]
-                vbs_perfs[inst] = float(row.max() if self.maximize else row.min())
-            else:
-                vbs_perfs[inst] = (
-                    self.cutoff * self.par_factor if not self.maximize else 0.0
-                )
-        baselines_perf["VBS"] = vbs_perfs
-
-        # 2. Compute SBS (Single Best Solver)
-        sbs_algo = None
-        sbs_best_score = float("inf") if not self.maximize else float("-inf")
-        sbs_scores_dict = {}
-
-        for algo in self.algorithms:
-            col = perf_matrix[algo].copy()
-            if self.objective == "runtime":
-                penalized = np.where(
-                    col >= self.cutoff, self.cutoff * self.par_factor, col
-                )
-            else:
-                penalized = col.values
-            algo_mean = float(np.mean(penalized))
-            sbs_scores_dict[algo] = algo_mean
-
-            if not self.maximize:
-                if algo_mean < sbs_best_score:
-                    sbs_best_score = algo_mean
-                    sbs_algo = algo
-            else:
-                if algo_mean > sbs_best_score:
-                    sbs_best_score = algo_mean
-                    sbs_algo = algo
-
-        sbs_perfs = {}
-        for inst in self.instances:
-            sbs_perfs[inst] = (
-                float(perf_matrix.loc[inst, sbs_algo])
-                if inst in perf_matrix.index
-                else (self.cutoff * self.par_factor if not self.maximize else 0.0)
+        pred_df.columns = pred_df.columns.astype(str).str.strip()
+        if pred_df.index.has_duplicates or pred_df.columns.has_duplicates:
+            raise ValueError(
+                "Prediction instance IDs and selector names must be unique"
             )
-        baselines_perf[f"SBS ({sbs_algo})"] = sbs_perfs
-
-        # 3. Evaluate each selector column in pred_df
-        selector_results: dict[str, dict[str, float]] = {}
-        selector_perf_vectors: dict[str, list[float]] = {}
-        selector_stats: dict[str, dict[str, Any]] = {}
-
-        candidate_cols = [str(c).strip() for c in pred_df.columns]
-
-        # Check if single column without name
-        if len(candidate_cols) == 1 and candidate_cols[0].lower() in (
+        if not len(pred_df.columns) or not self.instances or not self.algorithms:
+            raise ValueError("Evaluation needs instances, algorithms, and selectors")
+        if set(pred_df.index) - set(self.instances):
+            raise ValueError("Predictions contain unknown instances")
+        if self.objective == "solution_quality" and (
+            set(pred_df.index) != set(self.instances) or (pred_df == "").any().any()
+        ):
+            raise ValueError(
+                "Missing quality predictions require a domain-specific penalty"
+            )
+        if len(pred_df.columns) == 1 and pred_df.columns[0].lower() in (
             "algorithm",
             "algo",
             "selected",
         ):
-            candidate_cols = [pred_path.stem]
-            pred_df.columns = candidate_cols
+            pred_df.columns = [pred_path.stem]
+        candidate_cols = list(pred_df.columns)
+        if any(
+            name in {"VBS"} or name.startswith("SBS (") or not name
+            for name in candidate_cols
+        ):
+            raise ValueError(
+                "Selector names must be non-empty and not use baseline names"
+            )
 
+        perf_matrix = self.scenario.performance_data
+        if perf_matrix is None:
+            raise ValueError("Scenario has no performance data loaded")
+        # Upstream negates quality maximization. Report and compare original units.
+        perf_matrix = -perf_matrix if self.maximize else perf_matrix.copy()
+        runstatus = self.scenario.runstatus_data
+        if runstatus is None:
+            raise ValueError("Scenario has no algorithm runstatuses")
+        ok_matrix = runstatus.eq("ok")
+        if self.objective == "runtime":
+            ok_matrix = ok_matrix & (perf_matrix < self.cutoff)
+            perf_matrix = perf_matrix.where(ok_matrix, self.cutoff * self.par_factor)
+        if not np.isfinite(perf_matrix.to_numpy(dtype=float)).all():
+            raise ValueError("Performance values must be finite")
+        feat_costs, presolved = (
+            self._feature_processing()
+            if include_feature_costs and self.objective == "runtime"
+            else ({}, set())
+        )
+        selector_perf_vectors: dict[str, list[float]] = {}
+        solved_vectors: dict[str, list[bool]] = {}
         for sel in candidate_cols:
-            col_data = pred_df[sel]
-            inst_perf = {}
-            timeouts_count = 0
-            solved_count = 0
-
+            values = []
+            solved = []
             for inst in self.instances:
-                if inst not in col_data.index:
-                    # Missing prediction: penalty
-                    final_time = (
-                        self.cutoff * self.par_factor if not self.maximize else 0.0
-                    )
-                    timeouts_count += 1
-                else:
-                    val = col_data.loc[inst]
-                    f_cost = feat_costs.get(inst, 0.0)
-
-                    # Check if val is an algorithm name
-                    if isinstance(val, str) and val in self.algorithms:
-                        base_time = float(perf_matrix.loc[inst, val])
-                        status = (
-                            str(runstatus_matrix.loc[inst, val]).lower()
-                            if runstatus_matrix is not None
-                            and inst in runstatus_matrix.index
-                            else "ok"
+                val = pred_df.loc[inst, sel] if inst in pred_df.index else ""
+                if val == "":
+                    score, ok = self.cutoff * self.par_factor, False
+                elif input_mode == "algorithm_selections":
+                    if val not in self.algorithms:
+                        raise ValueError(
+                            f"Unknown algorithm '{val}'; numeric measurements require measured_performance mode"
                         )
-                    else:
-                        # Assume precomputed numeric performance
-                        try:
-                            base_time = float(val)
-                            status = "ok" if base_time < self.cutoff else "timeout"
-                        except (ValueError, TypeError):
-                            base_time = self.cutoff
-                            status = "crash"
-
-                    if self.objective == "runtime":
-                        total_time = base_time + f_cost
-                        if status != "ok" or total_time >= self.cutoff:
-                            final_time = self.cutoff * self.par_factor
-                            timeouts_count += 1
-                        else:
-                            final_time = total_time
-                            solved_count += 1
-                    else:
-                        final_time = base_time
-                        if not self.maximize:
-                            if final_time > self.cutoff or status != "ok":
-                                timeouts_count += 1
-                            else:
-                                solved_count += 1
-                        else:
-                            if final_time < self.cutoff or status != "ok":
-                                timeouts_count += 1
-                            else:
-                                solved_count += 1
-
-                inst_perf[inst] = final_time
-
-            selector_results[sel] = inst_perf
-            vec = [inst_perf[inst] for inst in self.instances]
-            selector_perf_vectors[sel] = vec
-
-            mean_score = float(np.mean(vec))
-            selector_stats[sel] = {
-                "name": sel,
-                "par_score": round(mean_score, 3),
-                "solved_count": solved_count,
-                "solved_percentage": round(
-                    float(solved_count / len(self.instances) * 100), 2
-                ),
-                "timeouts_count": timeouts_count,
-                "timeouts_percentage": round(
-                    float(timeouts_count / len(self.instances) * 100), 2
-                ),
-            }
-
-        # Add baselines to stats and vectors
-        for b_name, b_dict in baselines_perf.items():
-            b_vec = []
-            b_timeouts = 0
-            b_solved = 0
-            for inst in self.instances:
-                val = b_dict[inst]
-                if self.objective == "runtime" and val >= self.cutoff:
-                    val = self.cutoff * self.par_factor
-                    b_timeouts += 1
+                    score = float(perf_matrix.loc[inst, val])
+                    ok = bool(ok_matrix.loc[inst, val])
                 else:
-                    b_solved += 1
-                b_vec.append(val)
+                    try:
+                        score = float(val)
+                    except ValueError as exc:
+                        raise ValueError(
+                            "Measured performance must be numeric"
+                        ) from exc
+                    if not np.isfinite(score) or (
+                        self.objective == "runtime" and score < 0
+                    ):
+                        raise ValueError(
+                            "Measured performance must be finite and runtime non-negative"
+                        )
+                    ok = self.objective != "runtime" or score < self.cutoff
+                if self.objective == "runtime":
+                    if inst in presolved:
+                        score, ok = feat_costs[inst], True
+                    else:
+                        score += feat_costs.get(inst, 0.0)
+                    ok = ok and score < self.cutoff
+                    if not ok:
+                        score = self.cutoff * self.par_factor
+                values.append(score)
+                solved.append(ok)
+            selector_perf_vectors[sel] = values
+            solved_vectors[sel] = solved
 
-            selector_perf_vectors[b_name] = b_vec
-            b_mean = float(np.mean(b_vec))
-            selector_stats[b_name] = {
-                "name": b_name,
-                "par_score": round(b_mean, 3),
-                "solved_count": b_solved,
-                "solved_percentage": round(
-                    float(b_solved / len(self.instances) * 100), 2
-                ),
-                "timeouts_count": b_timeouts,
-                "timeouts_percentage": round(
-                    float(b_timeouts / len(self.instances) * 100), 2
-                ),
-            }
-
-        # Ranking
-        sorted_stats = sorted(
-            selector_stats.values(),
-            key=lambda x: x["par_score"],
+        means = perf_matrix.mean()
+        sbs_algo = means.idxmax() if self.maximize else means.idxmin()
+        best_algorithms = (
+            perf_matrix.idxmax(axis=1) if self.maximize else perf_matrix.idxmin(axis=1)
+        )
+        for name, choices in (
+            ("VBS", best_algorithms),
+            (f"SBS ({sbs_algo})", dict.fromkeys(self.instances, sbs_algo)),
+        ):
+            selector_perf_vectors[name] = [
+                float(perf_matrix.loc[i, choices[i]]) for i in self.instances
+            ]
+            solved_vectors[name] = [
+                bool(ok_matrix.loc[i, choices[i]]) for i in self.instances
+            ]
+        # Keep unrounded means for ranking; rounding must not change the winner.
+        names = sorted(
+            selector_perf_vectors,
+            key=lambda n: float(np.mean(selector_perf_vectors[n])),
             reverse=self.maximize,
         )
-        for rank_idx, stat in enumerate(sorted_stats, start=1):
-            stat["rank"] = rank_idx
-
-        # Permutation significance test against the top selector (excluding VBS oracle)
-        top_selector_stat = None
-        for s in sorted_stats:
-            if not s["name"].startswith("VBS"):
-                top_selector_stat = s
-                break
-        if top_selector_stat is None:
-            top_selector_stat = sorted_stats[0]
-
-        top_name = top_selector_stat["name"]
+        sorted_stats = []
+        for rank, name in enumerate(names, 1):
+            solved_count = sum(solved_vectors[name])
+            sorted_stats.append(
+                {
+                    "name": name,
+                    "rank": rank,
+                    "par_score": round(float(np.mean(selector_perf_vectors[name])), 3),
+                    "solved_count": solved_count,
+                    "solved_percentage": round(
+                        100 * solved_count / len(self.instances), 2
+                    ),
+                    "timeouts_count": len(self.instances) - solved_count,
+                    "timeouts_percentage": round(
+                        100
+                        * (len(self.instances) - solved_count)
+                        / len(self.instances),
+                        2,
+                    ),
+                }
+            )
+        top_name = next(name for name in names if name in candidate_cols)
         significance_results = []
         if run_significance_tests:
             tester = PermutationTester()
-            top_vec = selector_perf_vectors[top_name]
-
-            for s in sorted_stats:
-                other_name = s["name"]
-                if other_name == top_name or other_name.startswith("VBS"):
+            for other in names:
+                if other in (top_name, "VBS"):
                     continue
-                test_res = tester.run_test(
-                    vec1=top_vec,
-                    vec2=selector_perf_vectors[other_name],
-                    alpha=0.05,
-                    permutations=5000,
+                result = tester.run_test(
+                    selector_perf_vectors[top_name],
+                    selector_perf_vectors[other],
                     name1=top_name,
-                    name2=other_name,
+                    name2=other,
                     maximize=self.maximize,
+                    permutations=5000,
                 )
                 significance_results.append(
-                    {
-                        "comparison": f"{top_name} vs {other_name}",
-                        "p_value": test_res["p_value"],
-                        "is_significant": test_res["is_significant"],
-                        "winner": test_res["winner"],
-                        "observed_diff": test_res["observed_diff"],
-                        "message": test_res["message"],
-                    }
+                    {"comparison": f"{top_name} vs {other}", **result}
                 )
 
         # Save artifacts
@@ -347,7 +320,11 @@ class SelectorEvaluator:
             "cutoff": self.cutoff,
             "par_factor": self.par_factor,
             "objective": self.objective,
-            "feature_costs_included": include_feature_costs,
+            "feature_costs_included": include_feature_costs
+            and self.objective == "runtime",
+            "feature_costs_available": self.scenario.feature_cost_data is not None,
+            "input_mode": input_mode,
+            "score_direction": "maximize" if self.maximize else "minimize",
             "rankings": sorted_stats,
             "top_selector": top_name,
             "significance_tests": significance_results,

@@ -1,15 +1,15 @@
 # ASlib MCP Server
 
-An MCP (Model Context Protocol) server exposing the core functionalities of [`aslib_scenario`](https://github.com/mlindauer/ASlibScenario), the official specification checker from [`aslib-spec`](https://github.com/coseal/aslib-spec), and the standard benchmark scenario repository [`aslib_data`](https://github.com/coseal/aslib_data) from the **Algorithm Selection Library (ASlib)**.
+An MCP (Model Context Protocol) server exposing the core functionalities of [`aslib_scenario`](https://github.com/mlindauer/ASlibScenario), a local linter based on [`aslib-spec`](https://github.com/coseal/aslib-spec), and the standard benchmark scenario repository [`aslib_data`](https://github.com/coseal/aslib_data) from the **Algorithm Selection Library (ASlib)**.
 
 ---
 
 ## 1. Overview & Scientific Purpose
 
 Algorithm Selection (AS) benchmarks evaluate algorithms across diverse problem instances. The ASlib MCP server provides a comprehensive toolkit for ASlib 2.0 benchmarking:
-- **ASlib Benchmark Repository & Discovery**: Integrated access to 45+ standardized scenarios across domains (SAT, CSP, QBF, MAXSAT, MIP, TSP, ASP, etc.) from `coseal/aslib_data`, with high-speed indexing, domain/objective filtering, shallow-clone local caching (`~/.cache/aslib_data`), and transparent Scenario ID resolution.
+- **ASlib Benchmark Repository & Discovery**: Integrated access to 45+ standardized scenarios across domains (SAT, CSP, QBF, MAXSAT, MIP, TSP, ASP, etc.) from `coseal/aslib_data`, with high-speed indexing, domain/objective filtering, shallow-clone local caching (`~/.cache/aslib_data`, override with `ASLIB_DATA_DIR`), and transparent Scenario ID resolution.
 - **ASlib Benchmark Reading**: Parses ASlib scenario folders containing YAML specifications (`description.txt`) and ARFF files (`algorithm_runs.arff`, `feature_values.arff`, `feature_runstatus.arff`, `cv.arff`, etc.), aggregating repeated measurements according to official rules (median for runtimes and costs, mean for features, mode for runstatuses).
-- **Tabular CSV Scenario Loading & Export**: Constructs complete ASlib scenario representations directly from separate CSV matrices, or exports CSV benchmarks into fully compliant ASlib directories.
+- **Tabular CSV Scenario Loading & Export**: Constructs complete ASlib scenario representations directly from separate CSV matrices, or exports CSV benchmarks into ASlib directories with explicit CSV export assumptions.
 - **Cross-Validation Partitioning**: Extracts disjoint train/test splits for any cross-validation fold index, or automatically generates balanced $k$-fold CV partitions using scikit-learn.
 - **Multi-Metric Management**: Switches between active performance metrics (e.g., runtime vs. solution quality vs. PAR10).
 - **Scenario Validation & PAR10 Imputation**: Validates instance alignment and missing value constraints, automatically applying PAR10 penalties ($10 \times \text{cutoff}$) to non-OK runs and minimization sign inversions to maximization objectives.
@@ -37,11 +37,11 @@ Algorithm Selection (AS) benchmarks evaluate algorithms across diverse problem i
 
 ## 3. Installation & Setup
 
-Extract the deliverable archive and navigate to the directory:
+Clone the repository and navigate to the directory:
 
 ```bash
-unzip aslib-mcp.zip
-cd aslib_mcp
+git clone https://github.com/LucasMacieel/aslib-mcp.git
+cd aslib-mcp
 ```
 
 Create a virtual environment and sync runtime and development dependencies using [`uv`](https://docs.astral.sh/uv/):
@@ -109,7 +109,7 @@ Discover and filter benchmark scenarios available in the official ASlib scenario
   - `objective` (`str | null`, *optional*, default `null`): Optimization objective filter (`"runtime"` vs. `"solution_quality"`).
   - `search` (`str | null`, *optional*, default `null`): Substring keyword search matching scenario ID or problem domain.
   - `limit` (`int`, default `50`): Maximum number of scenarios to return.
-- **Returns**: Dictionary containing total catalog count, matched count, and scenario summaries (domain, objective, instance count, algorithm count, cutoff, and verification health `has_cv`, `has_costs`, `is_valid`).
+- **Returns**: Dictionary containing total catalog count, matched count, and scenario summaries (domain, objective, instance count, algorithm count, cutoff, and verification health `has_cv`, `has_costs`, `has_required_files` (presence only; use linting for validity)).
 
 ### 2. `aslib_get_scenario_info`
 Retrieve detailed specification metadata for an ASlib scenario without loading full ARFF matrices.
@@ -119,18 +119,18 @@ Retrieve detailed specification metadata for an ASlib scenario without loading f
 - **Returns**: Dictionary with scenario metadata: domain, instance count, algorithms, feature steps, cutoff time and memory, performance measures, citation BibTeX, and readme notes.
 
 ### 3. `aslib_fetch_scenario`
-Ensure a benchmark scenario from `coseal/aslib_data` is locally available and validated in the Scenario Cache (`~/.cache/aslib_data`).
+Ensure a benchmark scenario from `coseal/aslib_data` is locally available and validated in the Scenario Cache (`~/.cache/aslib_data`, override with `ASLIB_DATA_DIR`).
 
 - **Parameters**:
   - `scenario_id` (`str`, **required**): Canonical Scenario ID (e.g. `"SAT12-ALL"`, `"ASP-POTASSCO"`, `"QBF-2016"`).
-  - `force_update` (`bool`, default `false`): Whether to force re-cloning or refreshing from upstream.
+  - `force_update` (`bool`, default `false`): Whether to refresh the existing Git cache with a fast-forward pull. Failed refreshes preserve the cache.
 - **Returns**: Dictionary with `scenario_id`, local filesystem `scenario_dir`, validation status, and present files.
 
 ### 4. `aslib_sync_repository`
 Synchronize the local ASlib Scenario Cache with the upstream `coseal/aslib_data` GitHub repository via git clone or pull.
 
 - **Parameters**:
-  - `force` (`bool`, default `false`): Whether to force re-cloning or re-indexing.
+  - `force` (`bool`, default `false`): Whether to refresh/re-index the cache. Non-Git data directories are never replaced.
 - **Returns**: Dictionary with sync status, commit output, and total indexed scenarios.
 
 ### 5. `aslib_read_scenario`
@@ -168,6 +168,8 @@ Partition an ASlib scenario into disjoint training and test splits for cross-val
   - `scenario_dir` (`str`, **required**): Path to the ASlib scenario directory or canonical Scenario ID (e.g. `"SAT12-ALL"`, `"ASP-POTASSCO"`).
   - `fold_index` (`int`, default `1`): 1-based index of the cross-validation fold to use as test split.
   - `output_dir` (`str | null`, *optional*, default `null`): Base output directory.
+  - `cv_csv_path` (`str | null`, default `null`): Optional `cv_splits.csv` artifact from `aslib_create_cv_splits`; overrides scenario CV.
+  - `seed` (`int | null`, default `null`): Seed for generation only when neither CSV nor scenario CV is available.
 - **Returns**: Dictionary with `fold_index`, `train_num_instances`, `test_num_instances`, `test_instances` list, and `artifacts` for train/test performance, feature, and runstatus matrices.
 
 ### 8. `aslib_create_cv_splits`
@@ -207,7 +209,7 @@ Validate an ASlib benchmark directory against the official ASlib 2.0 specificati
 - **Returns**: Structured dictionary with `is_valid`, `scenario_id`, `errors`, `warnings`, `recommendations`, `checked_files`, and `summary`.
 
 ### 12. `aslib_export_scenario`
-Export tabular CSV benchmarks into a fully compliant, self-contained ASlib scenario directory (`description.txt`, `algorithm_runs.arff`, `feature_values.arff`, `feature_runstatus.arff`, and optional `cv.arff` / `feature_costs.arff`).
+Export tabular CSV benchmarks into an ASlib scenario directory (`description.txt`, `algorithm_runs.arff`, `feature_values.arff`, `feature_runstatus.arff`, and optional `cv.arff` / `feature_costs.arff`).
 
 - **Parameters**:
   - `perf_csv_path` (`str`, **required**): Path to algorithm performance CSV (rows: instances, cols: algorithms).
@@ -221,6 +223,7 @@ Export tabular CSV benchmarks into a fully compliant, self-contained ASlib scena
   - `generate_cv` (`bool`, default `true`): Whether to automatically generate balanced CV folds.
   - `n_folds` (`int`, default `10`): Number of CV folds to generate if `generate_cv` is true.
   - `seed` (`int | null`, default `null`): Random seed for reproducible fold generation.
+  - `algorithm_metadata` (`dict | null`, default `null`): Per-algorithm `configuration` (string) and `deterministic` (boolean). Omission declares deterministic algorithms with empty configurations.
 - **Returns**: Dictionary with `message`, `scenario_id`, `output_dir`, `created_files`, and file `artifacts`.
 
 ### 13. `aslib_permutation_test`
@@ -246,11 +249,12 @@ Benchmark and rank algorithm selectors against an ASlib scenario and standard ba
 
 - **Parameters**:
   - `scenario_dir` (`str`, **required**): Path to the ASlib scenario directory or canonical Scenario ID.
-  - `predictions_csv_path` (`str`, **required**): Path to CSV with selector choices or predicted runtimes.
+  - `predictions_csv_path` (`str`, **required**): Path to CSV with selector algorithm choices. Numeric values require `input_mode="measured_performance"` and must be observed scores, not predictions.
   - `include_feature_costs` (`bool`, default `true`): Whether to add feature extraction costs from `feature_costs.arff`.
   - `par_factor` (`float`, default `10.0`): Penalty factor for timeouts.
   - `run_significance_tests` (`bool`, default `true`): Whether to run permutation tests against the top selector.
   - `output_dir` (`str | null`, default `null`): Output directory for evaluation CSV artifacts.
+  - `input_mode` (`"algorithm_selections" | "measured_performance"`, default `"algorithm_selections"`): Select measured scenario outcomes by algorithm name, or accept caller-supplied measured performance in original units.
 - **Returns**: Dictionary with `rankings` table (SBS, VBS, and evaluated selectors), `top_selector`, `significance_tests`, and exported summary `artifacts`.
 
 ---
@@ -313,8 +317,26 @@ asyncio.run(main())
 
 ## 7. Validation & Limitations
 
-- **Verification Scope**: All 6 tools passed strict verification with 31 pytest tests and 14 MCP runtime acceptance cases covering reference agreement, changed inputs, input validation, and artifact collision resistance.
-- **Independent Runtime Testing**: Verified in both development environment and a completely clean Python 3.12 virtual environment over stdio transport.
-- **Known Upstream Notes**:
-  - Upstream `change_perf_measure` uses truthiness check for index (`if measure_idx:`), which is handled safely by the tool wrapper when switching to index `0`.
-  - When calling `aslib_create_cv_splits`, provide a `seed` parameter if deterministic fold assignment is required.
+Run the deterministic tests without downloading any benchmark data:
+
+```bash
+uv run pytest -m "not integration"
+uv run ruff check src tests
+uv run ty check src tests
+```
+
+To run the full suite against the official data repository:
+
+```bash
+git clone --depth 1 https://github.com/coseal/aslib_data.git /tmp/aslib_data
+ASLIB_DATA_DIR=/tmp/aslib_data uv run pytest
+```
+
+- The reader delegates to the pinned upstream package: medians for performance/costs, means for features, modal runstatuses, and only the first CV repetition. Loading negates maximizing quality scores internally; evaluation reports restore original score units.
+- The linter is a partial implementation of the specification, not the official checker or a certification service. It checks core metadata, measurement keys, numeric performance schemas, dependencies and instance alignment. Algorithm-feature files and experiment provenance require separate review. `is_valid` means no errors among the implemented checks.
+- CSV export requires matching, unique instance IDs. All features form one `ALL` step and must be numeric; missing features are emitted as ARFF `?`. Finite numeric values, including `-512`, are preserved. Missing runtime measurements are marked as crashes; missing solution quality requires domain-specific imputation before export. Quality magnitude never implies a timeout. Supply algorithm metadata when the default deterministic assumption is inappropriate.
+- Evaluation uses the primary performance measure. Numeric runtime predictions are not benchmark outcomes; use algorithm selections, or explicitly supply externally measured scores. Quality evaluation requires complete predictions because no universal missing-quality penalty exists. SBS is selected on the evaluated instances as a descriptive baseline, not a training-only baseline.
+- Runtime feature accounting follows default steps and their dependencies, stops on presolving, and rejects unknown used-step costs. With no cost file, scores exclude unknown extraction overhead; inspect `feature_costs_available`. VBS/SBS exclude selector feature costs. Supplied measurements must exclude feature overhead if `include_feature_costs=true`.
+- Permutation p-values are empirical, one-sided, and unadjusted for selecting the best observed candidate or multiple comparisons. Interpret them as exploratory comparisons rather than confirmatory significance claims.
+- To reuse generated CV folds, pass their CSV artifact via `aslib_get_cv_split(cv_csv_path=...)`. Scenario directories are not modified. Provide a seed for reproducible generation.
+- Upstream `change_perf_measure` ignores index zero; the wrapper corrects that case. Upstream validation contains `sys.exit` paths for malformed data; lint unfamiliar scenarios before loading them.

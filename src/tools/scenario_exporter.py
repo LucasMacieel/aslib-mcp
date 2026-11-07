@@ -1,6 +1,6 @@
 """ASlib scenario exporter.
 
-Generates a fully compliant ASlib 2.0 scenario directory containing ARFF files,
+Generates an ASlib scenario directory containing ARFF files,
 YAML description, and optional cross-validation splits from tabular CSV benchmarks.
 Modernized and expanded from coseal/aslib-spec (scripts/generate_scenario.py).
 """
@@ -15,6 +15,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from src.tools.csv_tables import read_matrix_csv
+
 
 def export_aslib_scenario(
     perf_csv_path: str | Path,
@@ -28,6 +30,7 @@ def export_aslib_scenario(
     generate_cv: bool = True,
     n_folds: int = 10,
     seed: int | None = 1234,
+    algorithm_metadata: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Exports performance and feature CSV tables into a spec-compliant ASlib scenario directory.
 
@@ -56,15 +59,26 @@ def export_aslib_scenario(
     if not feat_file.is_file():
         raise FileNotFoundError(f"Feature CSV not found: {feat_file}")
 
-    target_dir.mkdir(parents=True, exist_ok=True)
-
     # Load data
-    perf_df = pd.read_csv(perf_file, index_col=0)
-    feat_df = pd.read_csv(feat_file, index_col=0)
+    perf_df = read_matrix_csv(perf_file)
+    feat_df = read_matrix_csv(feat_file)
 
     # Clean index strings
     perf_df.index = perf_df.index.astype(str).str.strip()
     feat_df.index = feat_df.index.astype(str).str.strip()
+    perf_df.columns = perf_df.columns.astype(str).str.strip()
+    feat_df.columns = feat_df.columns.astype(str).str.strip()
+    for table in (perf_df, feat_df):
+        if table.index.has_duplicates or table.columns.has_duplicates:
+            raise ValueError("CSV instance IDs and column names must be unique")
+        if table.empty or any(not name for name in table.columns):
+            raise ValueError("CSV tables must contain instances and named columns")
+    if objective not in ("runtime", "solution_quality"):
+        raise ValueError("Invalid objective")
+    if not np.isfinite(cutoff) or (objective == "runtime" and cutoff <= 0):
+        raise ValueError("Runtime cutoff must be finite and positive")
+    if objective == "runtime" and maximize:
+        raise ValueError("Maximizing runtime is not supported")
 
     # Align common instances
     common_instances = sorted(set(perf_df.index).intersection(feat_df.index))
@@ -72,12 +86,53 @@ def export_aslib_scenario(
         raise ValueError(
             "No common instances found between performance and feature CSV files."
         )
+    if set(perf_df.index) != set(feat_df.index):
+        raise ValueError("Performance and feature CSVs must contain the same instances")
+    if objective == "solution_quality" and perf_df.isna().any().any():
+        raise ValueError("Missing solution quality requires domain-specific imputation")
+    for table in (perf_df, feat_df):
+        values = table.to_numpy(dtype=float)
+        if np.isinf(values).any():
+            raise ValueError("CSV values must be finite or missing")
+    if objective == "runtime" and (perf_df < 0).any().any():
+        raise ValueError("Runtime values must be non-negative")
+    if generate_cv and (n_folds < 2 or len(common_instances) < 2):
+        raise ValueError("Cross-validation requires at least two instances and folds")
 
     perf_df = perf_df.loc[common_instances]
     feat_df = feat_df.loc[common_instances]
 
     algorithms = [str(c).strip() for c in perf_df.columns]
     features = [str(c).strip() for c in feat_df.columns]
+    metadata = algorithm_metadata or {
+        algo: {"configuration": "", "deterministic": True} for algo in algorithms
+    }
+    if set(metadata) != set(algorithms) or any(
+        not isinstance(cfg, dict)
+        or not isinstance(cfg.get("deterministic"), bool)
+        or not isinstance(cfg.get("configuration"), str)
+        for cfg in metadata.values()
+    ):
+        raise ValueError(
+            "Algorithm metadata must define configuration and deterministic for each algorithm"
+        )
+    costs_df = None
+    if feature_costs_csv_path is not None:
+        c_path = Path(feature_costs_csv_path).resolve()
+        if not c_path.is_file():
+            raise FileNotFoundError(f"Feature costs CSV not found: {c_path}")
+        costs_df = read_matrix_csv(c_path)
+        costs_df.index = costs_df.index.astype(str).str.strip()
+        if costs_df.index.has_duplicates or set(costs_df.index) != set(
+            common_instances
+        ):
+            raise ValueError(
+                "Feature costs must contain the same instances exactly once"
+            )
+        cost_values = costs_df.to_numpy(dtype=float)
+        if np.isinf(cost_values).any() or (cost_values < 0).any():
+            raise ValueError("Feature costs must be non-negative and finite or missing")
+    target_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Write description.txt (YAML)
     description = {
@@ -89,14 +144,18 @@ def export_aslib_scenario(
         "algorithm_cutoff_memory": None,
         "features_cutoff_time": float(cutoff) if objective == "runtime" else None,
         "features_cutoff_memory": None,
-        "algorithms_deterministic": algorithms,
-        "algorithms_stochastic": [],
+        "algorithms_deterministic": [
+            a for a in algorithms if metadata[a]["deterministic"]
+        ],
+        "algorithms_stochastic": [
+            a for a in algorithms if not metadata[a]["deterministic"]
+        ],
         "features_deterministic": features,
         "features_stochastic": [],
         "number_of_feature_steps": 1,
         "feature_steps": {"ALL": {"provides": features, "requires": []}},
         "default_steps": ["ALL"],
-        "metainfo_algorithms": {algo: {"deterministic": True} for algo in algorithms},
+        "metainfo_algorithms": metadata,
     }
 
     desc_path = target_dir / "description.txt"
@@ -127,10 +186,7 @@ def export_aslib_scenario(
                     if score >= cutoff:
                         score = float(cutoff)
                 else:
-                    if maximize:
-                        status = "ok" if score >= cutoff else "timeout"
-                    else:
-                        status = "ok" if score <= cutoff else "timeout"
+                    status = "ok"
             run_data.append([inst, 1, algo, score, status])
 
     algo_runs_dict = {
@@ -155,7 +211,7 @@ def export_aslib_scenario(
         has_na = False
         for f in features:
             v = row[f]
-            if pd.isna(v) or v == -512:
+            if pd.isna(v):
                 vals.append(None)
                 has_na = True
             else:
@@ -176,7 +232,7 @@ def export_aslib_scenario(
     fs_attributes = [
         ("instance_id", "STRING"),
         ("repetition", "NUMERIC"),
-        ("ALL", ["ok", "timeout", "memout", "not_applicable", "crash", "other"]),
+        ("ALL", ["ok", "timeout", "memout", "presolved", "crash", "unknown", "other"]),
     ]
     fs_data = [
         [inst, 1, "timeout" if inst_has_timeout_feature[inst] else "ok"]
@@ -193,30 +249,28 @@ def export_aslib_scenario(
 
     # 5. Optional feature_costs.arff
     costs_path = None
-    if feature_costs_csv_path is not None:
-        c_path = Path(feature_costs_csv_path).resolve()
-        if c_path.is_file():
-            costs_df = pd.read_csv(c_path, index_col=0)
-            costs_df.index = costs_df.index.astype(str).str.strip()
-            costs_attributes = [
-                ("instance_id", "STRING"),
-                ("repetition", "NUMERIC"),
-                ("ALL", "NUMERIC"),
-            ]
-            costs_data = []
-            for inst in common_instances:
-                c_val = (
-                    float(costs_df.loc[inst].sum()) if inst in costs_df.index else 0.0
-                )
-                costs_data.append([inst, 1, c_val])
-            costs_dict = {
-                "relation": f"FEATURE_COSTS_{scenario_id}",
-                "attributes": costs_attributes,
-                "data": costs_data,
-            }
-            costs_path = target_dir / "feature_costs.arff"
-            with open(costs_path, "w", encoding="utf-8") as f:
-                arff.dump(costs_dict, f)
+    if costs_df is not None:
+        costs_attributes = [
+            ("instance_id", "STRING"),
+            ("repetition", "NUMERIC"),
+            ("ALL", "NUMERIC"),
+        ]
+        costs_data = []
+        for inst in common_instances:
+            c_val = (
+                None
+                if costs_df.loc[inst].isna().any()
+                else float(costs_df.loc[inst].sum())
+            )
+            costs_data.append([inst, 1, c_val])
+        costs_dict = {
+            "relation": f"FEATURE_COSTS_{scenario_id}",
+            "attributes": costs_attributes,
+            "data": costs_data,
+        }
+        costs_path = target_dir / "feature_costs.arff"
+        with open(costs_path, "w", encoding="utf-8") as f:
+            arff.dump(costs_dict, f)
 
     # 6. Optional cv.arff
     cv_path = None

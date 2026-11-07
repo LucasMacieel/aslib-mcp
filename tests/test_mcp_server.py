@@ -40,8 +40,9 @@ async def test_mcp_server_tool_enumeration():
 
 
 @pytest.mark.anyio
-async def test_mcp_client_call_list_scenarios():
+async def test_mcp_client_call_list_scenarios(mini_scenario_dir, monkeypatch):
     """Client can invoke aslib_list_scenarios over MCP protocol."""
+    monkeypatch.setenv("ASLIB_DATA_DIR", str(mini_scenario_dir.parent))
     async with Client(mcp) as client:
         res = await client.call_tool("aslib_list_scenarios", {"limit": 3})
         assert not res.is_error
@@ -82,3 +83,28 @@ async def test_mcp_client_call_permutation_test():
         data = res.data
         assert data["p_value"] == 1.0
         assert data["winner"] == "tie"
+
+
+@pytest.mark.anyio
+async def test_mcp_generated_cv_is_reusable(mini_scenario_dir: Path):
+    async with Client(mcp) as client:
+        generated = await client.call_tool(
+            "aslib_create_cv_splits",
+            {
+                "scenario_dir": str(mini_scenario_dir),
+                "n_folds": 3,
+                "seed": 19,
+            },
+        )
+        result = await client.call_tool(
+            "aslib_get_cv_split",
+            {
+                "scenario_dir": str(mini_scenario_dir),
+                "fold_index": 3,
+                "cv_csv_path": generated.data["artifacts"][0]["path"],
+            },
+        )
+        assert not result.is_error
+        assert (
+            result.data["train_num_instances"] + result.data["test_num_instances"] == 5
+        )

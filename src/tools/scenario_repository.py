@@ -8,11 +8,12 @@ metadata indexing, scenario discovery, and transparent Scenario ID resolution.
 from __future__ import annotations
 
 import contextlib
+import csv
 import difflib
 import json
 import os
-import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -67,19 +68,49 @@ def is_cache_initialized(cache_dir: Path | None = None) -> bool:
 
 
 def ensure_cache(cache_dir: Path | None = None, force_clone: bool = False) -> Path:
-    """Ensure the ASlib scenario cache is initialized via shallow git clone.
+    """Initialize via staged shallow clone, or refresh an existing Git cache.
 
     If cache exists and is valid, returns the cache directory immediately.
     Raises RuntimeError if cloning fails due to network or missing git.
     """
-    target = cache_dir or get_cache_dir()
+    target = (cache_dir or get_cache_dir()).expanduser().resolve()
     if not force_clone and is_cache_initialized(target):
         return target
-
     target.parent.mkdir(parents=True, exist_ok=True)
-    if force_clone and target.exists():
-        shutil.rmtree(target)
-
+    if target.exists() and any(target.iterdir()):
+        if not (target / ".git").is_dir():
+            raise ValueError(f"Refusing to replace non-repository cache: {target}")
+        try:
+            subprocess.run(
+                ["git", "-C", str(target), "pull", "--ff-only"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=300,
+            )
+        except (subprocess.SubprocessError, OSError) as exc:
+            raise RuntimeError(
+                f"Unable to refresh ASlib clone at {target}: {exc}"
+            ) from exc
+        (target / INDEX_FILE_NAME).unlink(missing_ok=True)
+        return target
+    try:
+        with tempfile.TemporaryDirectory(
+            prefix=".aslib-clone-", dir=target.parent
+        ) as tmp:
+            stage = Path(tmp) / "repository"
+            subprocess.run(
+                ["git", "clone", "--depth", "1", REPO_URL, str(stage)],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=300,
+            )
+            if not is_cache_initialized(stage):
+                raise RuntimeError("ASlib clone contains no scenarios")
+            stage.rename(target)
+    except (subprocess.SubprocessError, OSError) as exc:
+        raise RuntimeError(f"Unable to clone ASlib repository: {exc}") from exc
     return target
 
 
@@ -111,7 +142,9 @@ def sync_repository(
 
     try:
         cmd = ["git", "-C", str(target), "pull", "--ff-only"]
-        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        res = subprocess.run(
+            cmd, capture_output=True, text=True, check=True, timeout=300
+        )
         pull_output = res.stdout.strip()
     except (subprocess.SubprocessError, OSError) as exc:
         return {
@@ -141,11 +174,11 @@ def _infer_domain(scenario_id: str, desc: dict[str, Any]) -> str:
 
 
 def _count_instances_fast(feature_file: Path) -> int | None:
-    """Quickly count instances from feature_values.arff by counting lines after @data."""
+    """Count distinct instance IDs, including quoted IDs and repeated measurements."""
     if not feature_file.is_file():
         return None
     try:
-        count = 0
+        instances = set()
         in_data = False
         with open(feature_file, "r", encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -153,10 +186,12 @@ def _count_instances_fast(feature_file: Path) -> int | None:
                 if not line or line.startswith("%"):
                     continue
                 if in_data:
-                    count += 1
+                    instances.add(
+                        next(csv.reader([line], skipinitialspace=True))[0].strip("'")
+                    )
                 elif line.lower() == "@data":
                     in_data = True
-        return count if in_data else None
+        return len(instances) if in_data else None
     except OSError:
         return None
 
@@ -165,7 +200,7 @@ def scan_and_index_scenarios(
     cache_dir: Path | None = None, force_reindex: bool = False
 ) -> dict[str, dict[str, Any]]:
     """Scan and index all scenarios in the cache directory, storing in _aslib_index.json."""
-    target = cache_dir or ensure_cache()
+    target = ensure_cache(cache_dir)
     index_path = target / INDEX_FILE_NAME
 
     if not force_reindex and index_path.is_file():
@@ -226,7 +261,8 @@ def scan_and_index_scenarios(
         has_cv = (item / "cv.arff").is_file()
         has_costs = (item / "feature_costs.arff").is_file()
         has_citation = (item / "citation.bib").is_file()
-        is_valid = has_runs and has_features and has_runstatus
+        # Presence is not a specification validation. Keep the distinction explicit.
+        has_required_files = has_runs and has_features and has_runstatus
 
         scenarios[scenario_id] = {
             "scenario_id": scenario_id,
@@ -243,7 +279,7 @@ def scan_and_index_scenarios(
             "has_cv": has_cv,
             "has_costs": has_costs,
             "has_citation": has_citation,
-            "is_valid": is_valid,
+            "has_required_files": has_required_files,
             "scenario_dir": str(item.resolve()),
         }
 
@@ -264,7 +300,7 @@ def list_scenarios(
     cache_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Filter and list benchmark scenarios in the Scenario Cache."""
-    target = cache_dir or ensure_cache()
+    target = ensure_cache(cache_dir)
     indexed = scan_and_index_scenarios(target)
 
     results: list[dict[str, Any]] = []
@@ -308,7 +344,7 @@ def resolve_scenario_dir(
     if direct_path.is_dir():
         return direct_path
 
-    target = cache_dir or ensure_cache()
+    target = ensure_cache(cache_dir)
     indexed = scan_and_index_scenarios(target)
 
     # 1. Exact match against indexed scenario IDs
@@ -408,7 +444,7 @@ def fetch_scenario(
     cache_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Ensure a scenario is present and validated in the local cache, returning its path and status."""
-    target = cache_dir or ensure_cache(force_clone=force_update)
+    target = ensure_cache(cache_dir, force_clone=force_update)
     scen_path = resolve_scenario_dir(scenario_id, target)
 
     required_files = [
@@ -418,13 +454,17 @@ def fetch_scenario(
         "feature_runstatus.arff",
     ]
     missing = [f for f in required_files if not (scen_path / f).is_file()]
-    is_valid = len(missing) == 0
+    from src.tools.spec_checker import lint_scenario_spec
+
+    validation = lint_scenario_spec(scen_path)
+    is_valid = validation["is_valid"]
 
     return {
         "scenario_id": scenario_id,
         "scenario_dir": str(scen_path),
         "is_valid": is_valid,
         "missing_required_files": missing,
+        "validation": validation,
         "files_present": sorted([f.name for f in scen_path.iterdir() if f.is_file()]),
         "message": (
             f"Scenario '{scenario_id}' is ready at {scen_path}"

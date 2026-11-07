@@ -22,7 +22,9 @@ import numpy as np
 import pandas as pd
 from aslib_scenario.aslib_scenario import ASlibScenario
 from fastmcp import FastMCP
+from sklearn.model_selection import KFold
 
+from src.tools.csv_tables import read_matrix_csv
 from src.tools.permutation_tester import PermutationTester, permutation_test_scenario
 from src.tools.scenario_exporter import export_aslib_scenario
 from src.tools.scenario_repository import (
@@ -43,6 +45,18 @@ ASLIB_SPEC_REFERENCE = "https://github.com/coseal/aslib-spec/tree/master"
 ASLIB_DATA_REFERENCE = "https://github.com/coseal/aslib_data"
 
 aslib_scenario_mcp = FastMCP(name="aslib_scenario")
+
+
+def _generate_cv(instances: list, n_folds: int, seed: int | None) -> pd.DataFrame:
+    """Generate CV using an independent RNG, without changing global random state."""
+    assignments = pd.DataFrame(
+        {"fold": np.zeros(len(instances), dtype=int)}, index=instances
+    )
+    for fold, (_, test) in enumerate(
+        KFold(n_splits=n_folds, shuffle=True, random_state=seed).split(instances), 1
+    ):
+        assignments.iloc[test, 0] = fold
+    return assignments
 
 
 def _get_output_dir(output_dir: str | None, prefix: str = "aslib") -> Path:
@@ -383,6 +397,12 @@ def aslib_get_cv_split(
         str | None,
         "Base directory for output artifacts; a unique subdirectory is created",
     ] = None,
+    cv_csv_path: Annotated[
+        str | None, "Optional generated CV assignments CSV; overrides scenario CV"
+    ] = None,
+    seed: Annotated[
+        int | None, "Random seed when the scenario has no CV assignments"
+    ] = None,
 ) -> dict:
     """Partition an ASlib scenario into disjoint training and test splits for a specified fold.
     Input is a scenario directory and fold index; output is partition metadata and exported split CSVs.
@@ -392,8 +412,32 @@ def aslib_get_cv_split(
     scenario = ASlibScenario()
     scenario.read_scenario(str(scen_path))
 
-    if scenario.cv_data is None:
-        scenario.create_cv_splits()
+    if cv_csv_path is not None:
+        assignments = read_matrix_csv(cv_csv_path)
+        assignments.index = assignments.index.astype(str)
+        if (
+            assignments.index.has_duplicates
+            or set(assignments.index) != set(scenario.instances or [])
+            or list(assignments.columns) != ["fold"]
+        ):
+            raise ValueError(
+                "CV CSV must contain all scenario instances exactly once and one fold column"
+            )
+        folds = pd.to_numeric(assignments["fold"], errors="coerce")
+        if (
+            not np.isfinite(folds).all()
+            or (folds < 1).any()
+            or (folds != np.floor(folds)).any()
+            or folds.nunique() < 2
+        ):
+            raise ValueError(
+                "CV folds must be positive integers with at least two folds"
+            )
+        assignments["fold"] = folds
+        scenario.cv_data = assignments
+    elif scenario.cv_data is None:
+        instances = scenario.instances or []
+        scenario.cv_data = _generate_cv(instances, min(10, len(instances)), seed)
 
     assert scenario.cv_data is not None
     unique_folds = sorted(scenario.cv_data["fold"].unique().tolist())
@@ -508,10 +552,7 @@ def aslib_create_cv_splits(
             f"Number of folds ({n_folds}) cannot exceed number of instances ({len(instances)})"
         )
 
-    if seed is not None:
-        np.random.seed(seed)
-
-    scenario.create_cv_splits(n_folds=n_folds)
+    scenario.cv_data = _generate_cv(instances, n_folds, seed)
     assert scenario.cv_data is not None
 
     out_dir = _get_output_dir(output_dir, prefix="create_cv")
@@ -805,8 +846,12 @@ def aslib_export_scenario(
         int, "Number of cross-validation folds if generate_cv is True"
     ] = 10,
     seed: Annotated[int | None, "Random seed for reproducible fold generation"] = None,
+    algorithm_metadata: Annotated[
+        dict[str, dict[str, Any]] | None,
+        "Algorithm configuration and deterministic flags; defaults to deterministic with empty configuration",
+    ] = None,
 ) -> dict:
-    """Export tabular CSV benchmarks into a fully compliant, self-contained ASlib scenario directory.
+    """Export numeric CSV matrices into an ASlib scenario with explicit metadata assumptions.
 
     Generates description.txt, algorithm_runs.arff, feature_values.arff,
     feature_runstatus.arff, and optional cv.arff / feature_costs.arff.
@@ -829,6 +874,7 @@ def aslib_export_scenario(
         generate_cv=generate_cv,
         n_folds=n_folds,
         seed=seed,
+        algorithm_metadata=algorithm_metadata,
     )
     res["reference"] = ASLIB_SPEC_REFERENCE
     res["artifacts"] = [
@@ -930,7 +976,7 @@ def aslib_evaluate_selectors(
     ],
     predictions_csv_path: Annotated[
         str,
-        "Path to CSV with selector algorithm selections or predicted runtimes (rows: instances)",
+        "Path to CSV with selector algorithm choices, or explicit measured performance (rows: instances)",
     ],
     include_feature_costs: Annotated[
         bool,
@@ -947,6 +993,10 @@ def aslib_evaluate_selectors(
         str | None,
         "Base directory for output artifacts; a unique subdirectory is created if omitted",
     ] = None,
+    input_mode: Annotated[
+        Literal["algorithm_selections", "measured_performance"],
+        "Algorithm choices by default; measured_performance accepts original-scale observed scores, not predictions",
+    ] = "algorithm_selections",
 ) -> dict:
     """Benchmark and rank algorithm selectors against an ASlib scenario and standard baselines.
 
@@ -962,6 +1012,7 @@ def aslib_evaluate_selectors(
         include_feature_costs=include_feature_costs,
         run_significance_tests=run_significance_tests,
         output_dir=out_dir,
+        input_mode=input_mode,
     )
     res["reference"] = ASLIB_SPEC_REFERENCE
     return res

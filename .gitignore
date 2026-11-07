@@ -39,3 +39,5 @@ htmlcov/
 data/
 *.arff
 *.csv.gz
+
+docs
