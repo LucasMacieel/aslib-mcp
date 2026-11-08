@@ -24,7 +24,7 @@ from fastmcp import FastMCP
 
 from src.tools.permutation_tester import PermutationTester, permutation_test_scenario
 from src.tools.scenario_exporter import export_aslib_scenario
-from src.tools.scenario_loader import ASlibScenario, read_cv_csv
+from src.tools.scenario_loader import ASlibScenario
 from src.tools.scenario_loader import generate_cv as _generate_cv
 from src.tools.scenario_repository import (
     fetch_scenario,
@@ -216,6 +216,19 @@ def aslib_read_scenario(
             {"description": "Ground truth data table", "path": str(p.resolve())}
         )
 
+    if scenario.cv_data_all:
+        p = out_dir / "cv_repetitions.csv"
+        pd.concat(
+            [
+                table.rename_axis("instance_id").reset_index().assign(repetition=rep)
+                for rep, table in scenario.cv_data_all.items()
+            ],
+            ignore_index=True,
+        )[["instance_id", "repetition", "fold"]].to_csv(p, index=False)
+        artifacts.append(
+            {"description": "All CV repetitions (long form)", "path": str(p.resolve())}
+        )
+
     instances = scenario.instances or []
     return {
         "message": f"Successfully loaded ASlib scenario '{scenario.scenario}' with {len(instances)} instances.",
@@ -234,6 +247,7 @@ def aslib_read_scenario(
         "algorithms": list(scenario.algorithms or []),
         "features": list(scenario.features or []),
         "num_instances": len(instances),
+        "available_repetitions": list(scenario.cv_data_all),
         "feature_steps": list(scenario.feature_steps or []),
     }
 
@@ -390,6 +404,7 @@ def aslib_get_cv_split(
     seed: Annotated[
         int | None, "Random seed when the scenario has no CV assignments"
     ] = None,
+    repetition: Annotated[int, "One-based CV repetition to use"] = 1,
 ) -> dict:
     """Partition an ASlib scenario into disjoint training and test splits for a specified fold.
     Input is a scenario directory and fold index; output is partition metadata and exported split CSVs.
@@ -399,11 +414,11 @@ def aslib_get_cv_split(
     scenario = ASlibScenario()
     scenario.read_scenario(str(scen_path))
 
-    if cv_csv_path is not None:
-        scenario.cv_data = read_cv_csv(cv_csv_path, scenario.instances or [])
-    elif scenario.cv_data is None:
-        instances = scenario.instances or []
-        scenario.cv_data = _generate_cv(instances, min(10, len(instances)), seed)
+    scenario.cv_data, available_repetitions = scenario.cv_assignments(
+        repetition, cv_csv_path, seed
+    )
+    if fold_index < 1:
+        raise ValueError("Fold index must be a positive integer")
 
     assert scenario.cv_data is not None
     unique_folds = sorted(scenario.cv_data["fold"].unique().tolist())
@@ -412,6 +427,8 @@ def aslib_get_cv_split(
             f"Fold index {fold_index} not found in scenario CV data. Available folds: {unique_folds}"
         )
 
+    if len(unique_folds) < 2:
+        raise ValueError("Fold must define non-empty training and evaluation instances")
     test_scen, train_scen = scenario.get_split(indx=fold_index)
 
     out_dir = _get_output_dir(output_dir, prefix=f"split_fold{fold_index}")
@@ -482,6 +499,8 @@ def aslib_get_cv_split(
         "reference": REFERENCE,
         "artifacts": artifacts,
         "fold_index": int(fold_index),
+        "repetition": repetition,
+        "available_repetitions": available_repetitions,
         "train_num_instances": len(train_scen.instances),
         "test_num_instances": len(test_scen.instances),
         "train_instances": list(train_scen.instances),
@@ -968,6 +987,17 @@ def aslib_evaluate_selectors(
         Literal["algorithm_selections", "measured_performance"],
         "Algorithm choices by default; measured_performance accepts original-scale observed scores, not predictions",
     ] = "algorithm_selections",
+    fold_index: Annotated[
+        int | None,
+        "Evaluate only this held-out fold; choose SBS on training instances",
+    ] = None,
+    repetition: Annotated[int, "One-based CV repetition to use"] = 1,
+    cv_csv_path: Annotated[
+        str | None, "Optional generated CV CSV overriding scenario folds"
+    ] = None,
+    seed: Annotated[
+        int | None, "Seed for fold generation when scenario CV is absent"
+    ] = None,
 ) -> dict:
     """Benchmark and rank algorithm selectors against an ASlib scenario and standard baselines.
 
@@ -984,6 +1014,10 @@ def aslib_evaluate_selectors(
         run_significance_tests=run_significance_tests,
         output_dir=out_dir,
         input_mode=input_mode,
+        fold_index=fold_index,
+        repetition=repetition,
+        cv_csv_path=cv_csv_path,
+        seed=seed,
     )
     res["reference"] = ASLIB_SPEC_REFERENCE
     return res

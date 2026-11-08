@@ -62,7 +62,7 @@ class SelectorEvaluator:
         self.instances = list(self.scenario.instances or [])
         self.algorithms = list(self.scenario.algorithms or [])
 
-    def _feature_processing(self) -> tuple[dict[str, float], set[str]]:
+    def _feature_processing(self, instances: list[str]) -> tuple[dict[str, float], set[str]]:
         """Charge default steps and dependencies, stopping on feature presolving."""
         groups = self.scenario.feature_group_dict
         ordered: list[str] = []
@@ -83,11 +83,11 @@ class SelectorEvaluator:
 
         for step in self.scenario.feature_steps_default or self.scenario.feature_steps:
             visit(step)
-        costs = dict.fromkeys(self.instances, 0.0)
+        costs = dict.fromkeys(instances, 0.0)
         presolved = set()
         cost_df = self.scenario.feature_cost_data
         statuses = self.scenario.feature_runstatus_data
-        for inst in self.instances:
+        for inst in instances:
             for step in ordered:
                 if cost_df is not None:
                     if step not in cost_df or inst not in cost_df.index:
@@ -119,6 +119,10 @@ class SelectorEvaluator:
         input_mode: Literal[
             "algorithm_selections", "measured_performance"
         ] = "algorithm_selections",
+        fold_index: int | None = None,
+        repetition: int = 1,
+        cv_csv_path: str | Path | None = None,
+        seed: int | None = None,
     ) -> dict[str, Any]:
         """Evaluate measured outcomes of selections, or explicitly supplied measurements.
 
@@ -128,6 +132,26 @@ class SelectorEvaluator:
         """
         if input_mode not in ("algorithm_selections", "measured_performance"):
             raise ValueError("Unknown evaluation input_mode")
+        instances = self.instances
+        training_instances: list[str] = []
+        available_repetitions = list(self.scenario.cv_data_all) or [1]
+        if fold_index is not None:
+            assignments, available_repetitions = self.scenario.cv_assignments(
+                repetition, cv_csv_path, seed
+            )
+            if fold_index < 1 or int(fold_index) != fold_index:
+                raise ValueError("Fold index must be a positive integer")
+            instances = [
+                i for i in self.instances if assignments.loc[i, "fold"] == fold_index
+            ]
+            test_instances = set(instances)
+            training_instances = [i for i in self.instances if i not in test_instances]
+            if not instances or not training_instances:
+                raise ValueError(
+                    "Fold must define non-empty training and evaluation instances"
+                )
+        elif repetition != 1 or cv_csv_path is not None or seed is not None:
+            raise ValueError("CV parameters require fold_index")
         pred_path = Path(predictions_csv_path).resolve()
         if not pred_path.is_file():
             raise FileNotFoundError(f"Predictions CSV not found: {pred_path}")
@@ -138,12 +162,14 @@ class SelectorEvaluator:
             raise ValueError(
                 "Prediction instance IDs and selector names must be unique"
             )
-        if not len(pred_df.columns) or not self.instances or not self.algorithms:
+        if not len(pred_df.columns) or not instances or not self.algorithms:
             raise ValueError("Evaluation needs instances, algorithms, and selectors")
-        if set(pred_df.index) - set(self.instances):
-            raise ValueError("Predictions contain unknown instances")
+        if set(pred_df.index) - set(instances):
+            raise ValueError(
+                "Predictions contain instances outside the evaluation partition"
+            )
         if self.objective == "solution_quality" and (
-            set(pred_df.index) != set(self.instances) or (pred_df == "").any().any()
+            set(pred_df.index) != set(instances) or (pred_df == "").any().any()
         ):
             raise ValueError(
                 "Missing quality predictions require a domain-specific penalty"
@@ -178,7 +204,7 @@ class SelectorEvaluator:
         if not np.isfinite(perf_matrix.to_numpy(dtype=float)).all():
             raise ValueError("Performance values must be finite")
         feat_costs, presolved = (
-            self._feature_processing()
+            self._feature_processing(instances)
             if include_feature_costs and self.objective == "runtime"
             else ({}, set())
         )
@@ -187,7 +213,7 @@ class SelectorEvaluator:
         for sel in candidate_cols:
             values = []
             solved = []
-            for inst in self.instances:
+            for inst in instances:
                 val = pred_df.loc[inst, sel] if inst in pred_df.index else ""
                 if val == "":
                     score, ok = self.cutoff * self.par_factor, False
@@ -225,20 +251,21 @@ class SelectorEvaluator:
             selector_perf_vectors[sel] = values
             solved_vectors[sel] = solved
 
-        means = perf_matrix.mean()
+        means = perf_matrix.loc[training_instances or instances].mean()
+        perf_matrix = perf_matrix.loc[instances]
         sbs_algo = means.idxmax() if self.maximize else means.idxmin()
         best_algorithms = (
             perf_matrix.idxmax(axis=1) if self.maximize else perf_matrix.idxmin(axis=1)
         )
         for name, choices in (
             ("VBS", best_algorithms),
-            (f"SBS ({sbs_algo})", dict.fromkeys(self.instances, sbs_algo)),
+            (f"SBS ({sbs_algo})", dict.fromkeys(instances, sbs_algo)),
         ):
             selector_perf_vectors[name] = [
-                float(perf_matrix.loc[i, choices[i]]) for i in self.instances
+                float(perf_matrix.loc[i, choices[i]]) for i in instances
             ]
             solved_vectors[name] = [
-                bool(ok_matrix.loc[i, choices[i]]) for i in self.instances
+                bool(ok_matrix.loc[i, choices[i]]) for i in instances
             ]
         # Keep unrounded means for ranking; rounding must not change the winner.
         names = sorted(
@@ -256,13 +283,13 @@ class SelectorEvaluator:
                     "par_score": round(float(np.mean(selector_perf_vectors[name])), 3),
                     "solved_count": solved_count,
                     "solved_percentage": round(
-                        100 * solved_count / len(self.instances), 2
+                        100 * solved_count / len(instances), 2
                     ),
-                    "timeouts_count": len(self.instances) - solved_count,
+                    "timeouts_count": len(instances) - solved_count,
                     "timeouts_percentage": round(
                         100
-                        * (len(self.instances) - solved_count)
-                        / len(self.instances),
+                        * (len(instances) - solved_count)
+                        / len(instances),
                         2,
                     ),
                 }
@@ -305,7 +332,7 @@ class SelectorEvaluator:
             }
         )
 
-        per_instance_df = pd.DataFrame(selector_perf_vectors, index=self.instances)
+        per_instance_df = pd.DataFrame(selector_perf_vectors, index=instances)
         per_inst_csv = out_path / "per_instance_penalized_performance.csv"
         per_instance_df.to_csv(per_inst_csv)
         artifacts.append(
@@ -321,13 +348,21 @@ class SelectorEvaluator:
             "provenance": self.provenance,
             "assumptions": {
                 "performance_measure": self.scenario.performance_measure[0],
-                "sbs_selection": "evaluated instances (descriptive baseline)",
+                "sbs_selection": (
+                    "training instances" if training_instances
+                    else "evaluated instances (descriptive baseline)"
+                ),
                 "baseline_feature_costs_included": False,
                 "feature_steps": "default steps and dependencies; stop on presolving",
                 "missing_feature_cost_file": "extraction overhead excluded",
                 "significance": "exploratory, one-sided, unadjusted for candidate selection and multiple comparisons",
             },
-            "num_instances": len(self.instances),
+            "num_instances": len(instances),
+            "evaluation_instances": instances,
+            "training_instances": training_instances,
+            "fold_index": fold_index,
+            "repetition": repetition if fold_index is not None else None,
+            "available_repetitions": available_repetitions,
             "cutoff": self.cutoff,
             "par_factor": self.par_factor,
             "objective": self.objective,

@@ -132,3 +132,33 @@ async def test_malformed_scenario_does_not_end_session(mini_scenario_dir: Path):
         )
         assert not result.is_error
         assert result.data["p_value"] == 1.0
+
+
+@pytest.mark.anyio
+async def test_generated_cv_can_evaluate_only_held_out_fold(mini_scenario_dir, tmp_path):
+    import pandas as pd
+
+    async with Client(mcp, timeout=10) as client:
+        generated = await client.call_tool(
+            'aslib_create_cv_splits',
+            {'scenario_dir': str(mini_scenario_dir), 'n_folds': 2, 'seed': 19},
+        )
+        cv_path = generated.data['artifacts'][0]['path']
+        split = await client.call_tool(
+            'aslib_get_cv_split',
+            {'scenario_dir': str(mini_scenario_dir), 'fold_index': 1,
+             'repetition': 1, 'cv_csv_path': cv_path},
+        )
+        instances = split.data['test_instances']
+        pred = tmp_path / 'heldout.csv'
+        pd.DataFrame({'selector': ['algo_b'] * len(instances)}, index=instances).to_csv(pred)
+        result = await client.call_tool(
+            'aslib_evaluate_selectors',
+            {'scenario_dir': str(mini_scenario_dir), 'predictions_csv_path': str(pred),
+             'fold_index': 1, 'repetition': 1, 'cv_csv_path': cv_path,
+             'run_significance_tests': False},
+        )
+        assert result.data['evaluation_instances'] == instances
+        assert result.data['training_instances'] == split.data['train_instances']
+        assert result.data['num_instances'] == len(instances)
+        assert result.data['assumptions']['sbs_selection'] == 'training instances'

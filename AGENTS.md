@@ -19,6 +19,8 @@ This Python 3.12+ project exposes ASlib benchmarking tools through FastMCP. `src
 
 Follow existing Python conventions: four-space indentation, `snake_case` functions and modules, `PascalCase` classes, and `UPPER_SNAKE_CASE` constants. Add type annotations and concise docstrings to public helpers. Prefer `pathlib.Path` for filesystem operations. Preserve the `aslib_` prefix for exposed MCP tools. Ruff is available for linting; no custom formatter configuration is declared.
 
+The test files naming should be grounded in the actual module logic from the codebase. Avoid generic naming such as "test_review_regressions.py".
+
 ## Testing Guidelines
 
 Use pytest with `test_*.py` files and `test_*` functions. Reuse `make_scenario`, `synthetic_data`, and `tmp_path` for isolated fixtures. Add focused regression tests for corrected behavior, including malformed inputs and scientific scoring edge cases. No numerical coverage threshold is configured.

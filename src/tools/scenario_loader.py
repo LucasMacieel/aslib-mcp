@@ -10,6 +10,7 @@ from aslib_scenario.aslib_scenario import ASlibScenario as UpstreamScenario
 from sklearn.model_selection import KFold
 
 from src.tools.csv_tables import read_matrix_csv
+from src.tools.cv import validate_cv_arff
 
 
 def generate_cv(instances: list, n_folds: int, seed: int | None) -> pd.DataFrame:
@@ -47,6 +48,62 @@ def read_cv_csv(path: str | Path, instances: list) -> pd.DataFrame:
 class ASlibScenario(UpstreamScenario):
     """Adapt upstream parsing while retaining its numerical scoring conventions."""
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.cv_data_all: dict[int, pd.DataFrame] = {}
+
+    def read_algorithm_runs(self, fn: str) -> None:
+        """Reject invalid raw runtimes before medians can conceal them."""
+        with Path(fn).open() as stream:
+            data = arff.load(stream)
+        for index, kind in enumerate(self.performance_type):
+            if kind != "runtime":
+                continue
+            # Upstream accepts metric headers case-insensitively and requires
+            # their declared order. Validate those same positions.
+            column = 3 + index
+            for row in data["data"]:
+                value = row[column]
+                if (
+                    not isinstance(value, (int, float))
+                    or not np.isfinite(value) or value < 0
+                ):
+                    raise ValueError("Runtime measurements must be finite and non-negative")
+        super().read_algorithm_runs(fn)
+
+    def read_cv(self, fn: str) -> None:
+        """Preserve all CV repetitions and activate repetition one by default."""
+        with Path(fn).open() as stream:
+            data = arff.load(stream)
+        self.cv_data_all = validate_cv_arff(data, self.instances or [])
+        self.cv_data = self.cv_data_all[1]
+
+    def cv_assignments(
+        self,
+        repetition: int = 1,
+        cv_csv_path: str | Path | None = None,
+        seed: int | None = None,
+    ) -> tuple[pd.DataFrame, list[int]]:
+        """Choose stored or external folds; generate only when no CV exists."""
+        if repetition < 1 or int(repetition) != repetition:
+            raise ValueError("CV repetition must be a positive integer")
+        if cv_csv_path is not None:
+            if repetition != 1:
+                raise ValueError("CV CSV supports only repetition 1")
+            return read_cv_csv(cv_csv_path, self.instances or []), [1]
+        if self.cv_data_all:
+            if repetition not in self.cv_data_all:
+                raise ValueError(f"Unknown CV repetition {repetition}; available: {list(self.cv_data_all)}")
+            return self.cv_data_all[repetition], list(self.cv_data_all)
+        if repetition != 1:
+            raise ValueError("Only CV repetition 1 is available")
+        if self.cv_data is not None:
+            return self.cv_data, [1]
+        instances = self.instances or []
+        if len(instances) < 2:
+            raise ValueError("Cross-validation requires at least two instances")
+        return generate_cv(instances, min(10, len(instances)), seed), [1]
+
     def read_scenario(self, dn: str) -> None:
         """Load a scenario, converting upstream process exits into tool errors."""
         try:
@@ -60,6 +117,12 @@ class ASlibScenario(UpstreamScenario):
     def check_data(self) -> None:
         """Require exact matrix alignment and report upstream errors recoverably."""
         instances = set(self.instances or [])
+        for kind, data in zip(self.performance_type, self.performance_data_all):
+            if kind == "runtime" and (
+                not np.isfinite(data.to_numpy(dtype=float)).all()
+                or (data < 0).any().any()
+            ):
+                raise ValueError("Runtime measurements must be finite and non-negative")
         tables = [
             self.feature_data,
             self.feature_cost_data,

@@ -167,10 +167,11 @@ Partition an ASlib scenario into disjoint training and test splits for cross-val
 - **Parameters**:
   - `scenario_dir` (`str`, **required**): Path to the ASlib scenario directory or canonical Scenario ID (e.g. `"SAT12-ALL"`, `"ASP-POTASSCO"`).
   - `fold_index` (`int`, default `1`): 1-based index of the cross-validation fold to use as test split.
+  - `repetition` (`int`, default `1`): CV repetition to use from `cv.arff`; unknown repetitions are rejected.
   - `output_dir` (`str | null`, *optional*, default `null`): Base output directory.
   - `cv_csv_path` (`str | null`, default `null`): Optional `cv_splits.csv` artifact from `aslib_create_cv_splits`; overrides scenario CV.
   - `seed` (`int | null`, default `null`): Seed for generation only when neither CSV nor scenario CV is available.
-- **Returns**: Dictionary with `fold_index`, `train_num_instances`, `test_num_instances`, `test_instances` list, and `artifacts` for train/test performance, feature, and runstatus matrices.
+- **Returns**: Dictionary with `fold_index`, `repetition`, `available_repetitions`, `train_num_instances`, `test_num_instances`, `test_instances` list, and `artifacts` for train/test performance, feature, and runstatus matrices.
 
 ### 8. `aslib_create_cv_splits`
 Generate balanced $k$-fold cross-validation split assignments for all instances in a scenario. Supports local directory paths or canonical Scenario IDs.
@@ -256,7 +257,13 @@ Benchmark and rank algorithm selectors against an ASlib scenario and standard ba
   - `run_significance_tests` (`bool`, default `true`): Whether to run permutation tests against the top selector.
   - `output_dir` (`str | null`, default `null`): Output directory for evaluation CSV artifacts.
   - `input_mode` (`"algorithm_selections" | "measured_performance"`, default `"algorithm_selections"`): Select measured scenario outcomes by algorithm name, or accept caller-supplied measured performance in original units.
+  - `fold_index` (`int | null`, default `null`): Evaluate only this test fold and select SBS on the training complement. Omit for whole-scenario evaluation.
+  - `repetition` (`int`, default `1`): Native CV repetition used with `fold_index`.
+  - `cv_csv_path` (`str | null`, default `null`): Generated CV matrix CSV overriding native assignments; requires `fold_index` and repetition 1.
+  - `seed` (`int | null`, default `null`): Reproducible fold generation when native CV and a CV CSV are absent; requires `fold_index`.
 - **Returns**: Dictionary with `rankings` table (SBS, VBS, and evaluated selectors), `top_selector`, `significance_tests`, and exported summary `artifacts`.
+
+Results report `evaluation_instances`, `training_instances`, `fold_index`, `repetition`, and `available_repetitions`. Feature costs and significance tests use only evaluated instances.
 
 ---
 
@@ -333,17 +340,20 @@ git clone --depth 1 https://github.com/coseal/aslib_data.git /tmp/aslib_data
 ASLIB_DATA_DIR=/tmp/aslib_data uv run pytest
 ```
 
-- The reader adapts the pinned upstream package: medians for performance and known costs, means for numeric features, modes for categorical features and runstatuses, and only the first CV repetition. Modal ties use the first observed non-missing value; all-missing categorical groups remain missing. Feature costs remain unknown if any repetition is unknown. Loading negates maximizing quality scores internally; evaluation reports restore original score units.
+- The reader adapts the pinned upstream package: medians for performance and known costs, means for numeric features, modes for categorical features and runstatuses, and preservation of every CV repetition (repetition 1 is active by default). Modal ties use the first observed non-missing value; all-missing categorical groups remain missing. Feature costs remain unknown if any repetition is unknown. Loading negates maximizing quality scores internally; evaluation reports restore original score units.
 - The linter is a partial implementation of the specification, not the official checker or a certification service. It checks core metadata, measurement keys, numeric performance schemas, dependencies and instance alignment. Algorithm-feature files and experiment provenance require separate review. `is_valid` means no errors among the implemented checks.
 - CSV reading and export require matching, unique string instance IDs and reject duplicate headers. CSV reading preserves identifiers such as `001`, generates at most ten folds bounded by the instance count, and omits CV for a single instance. Optional CV CSVs must assign every instance exactly once to a positive integer fold with at least two distinct folds.
 - CSV export requires matching, unique instance IDs. All features form one `ALL` step and must be numeric; missing features are emitted as ARFF `?`. Finite numeric values, including `-512`, are preserved. Missing runtime measurements are marked as crashes; missing solution quality requires domain-specific imputation before export. Quality magnitude never implies a timeout. Supply algorithm metadata when the default deterministic assumption is inappropriate.
-- Evaluation uses the primary performance measure. Numeric runtime predictions are not benchmark outcomes; use algorithm selections, or explicitly supply externally measured scores. Quality evaluation requires complete predictions because no universal missing-quality penalty exists. SBS is selected on the evaluated instances as a descriptive baseline, not a training-only baseline.
+- Evaluation uses the primary performance measure. Numeric runtime predictions are not benchmark outcomes; use algorithm selections, or explicitly supply externally measured scores. Quality evaluation requires complete predictions because no universal missing-quality penalty exists. Whole-scenario evaluation selects SBS on the evaluated instances as a descriptive baseline. With `fold_index`, evaluation uses only that held-out fold and selects SBS on the training complement; the selected solver is then scored on the held-out fold. Predictions must belong to the evaluation partition. Missing runtime predictions within it receive the requested PAR penalty; quality predictions must cover the entire evaluation partition.
 - Runtime feature accounting follows default steps and their dependencies, stops on presolving, and rejects unknown used-step costs, including ARFF `?` values and partially missing repetitions. Unknown costs are never charged as zero. Evaluation can explicitly exclude extraction overhead with `include_feature_costs=false`; this does not establish end-to-end runtime superiority. With no cost file, scores exclude unknown extraction overhead; inspect `feature_costs_available`. VBS/SBS exclude selector feature costs. Supplied measurements must exclude feature overhead if `include_feature_costs=true`.
 - Scenario permutation comparisons honor `par_factor` for all non-OK runtime outcomes and use the scenario metadata for cutoff and optimization direction.
 - Permutation p-values are empirical, one-sided, and unadjusted for selecting the best observed candidate or multiple comparisons. Interpret them as exploratory comparisons rather than confirmatory significance claims.
-- To reuse generated CV folds, pass their CSV artifact via `aslib_get_cv_split(cv_csv_path=...)`. Scenario directories are not modified. Provide a seed for reproducible generation.
+- To reuse generated CV folds, pass their CSV artifact via `aslib_get_cv_split(cv_csv_path=...)` and `aslib_evaluate_selectors(fold_index=..., cv_csv_path=...)`. Both tools accept `repetition` for native repeated CV; generated/external matrix CSVs represent repetition 1 only. Scenario directories are not modified. Provide a seed for reproducible generation.
 - Upstream `change_perf_measure` ignores index zero; the wrapper corrects that case. Upstream process exits are translated into recoverable tool errors, so malformed scenarios do not end the MCP session. The linter checks instance coverage for every algorithm/repetition combination; lint unfamiliar scenarios before loading them.
 
 - Export destinations must be absent or empty. Reusing a populated directory raises an error before writing, preventing stale CV assignments or feature costs from surviving a new export. Export results report metadata assumptions. Explicit feature statuses are preserved; missing feature values alone never imply a timeout.
 - Permutation testing processes bounded batches (at most one million entries per batch, except when a single instance vector exceeds that size), preserving seeded results while avoiding a full permutations-by-instances matrix.
 - Selector evaluation and scenario-backed permutation results include scenario input SHA-256 hashes, the local Git revision when available, and whether the scenario has local Git changes. Hashes identify the actual input files even outside Git. Selector results also report the active measure, baseline definitions, feature-cost assumptions, and exploratory significance interpretation.
+
+- ARFF runtime measurements must be finite and non-negative before repetition aggregation. The linter checks feature columns against declarations and feature-step coverage. Native CV requires positive integer folds, consecutive repetition numbers starting at 1, and exactly one assignment per instance in every repetition.
+- `aslib_read_scenario` reports `available_repetitions` and exports `cv_repetitions.csv` with `instance_id,repetition,fold` columns alongside the active `cv_data.csv`. The long-form artifact preserves all repetitions for inspection; the CV override parameter accepts a single-repetition instance-by-fold matrix, such as `cv_splits.csv`.

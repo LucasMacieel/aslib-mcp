@@ -13,6 +13,8 @@ from typing import Any
 import arff
 import yaml
 
+from src.tools.cv import validate_cv_arff
+
 
 class ASlibSpecLinter:
     """Validates an ASlib benchmark scenario against the official specification."""
@@ -425,11 +427,18 @@ class ASlibSpecLinter:
                 )
                 break
 
-            for val in row[3:-1]:
+            for metric_index, val in enumerate(row[3:-1]):
                 if val is None or (
                     isinstance(val, (int, float)) and not math.isfinite(val)
                 ):
                     has_null = True
+                types = self.metadata.get("performance_type", [])
+                if (
+                    isinstance(types, list) and metric_index < len(types)
+                    and types[metric_index] == "runtime"
+                    and isinstance(val, (int, float)) and val < 0
+                ):
+                    self.errors.append("Runtime measurements must be non-negative")
 
         for (algo, repetition), measured_instances in coverage.items():
             if measured_instances != instances:
@@ -467,6 +476,26 @@ class ASlibSpecLinter:
             return
 
         attr_names = [a[0] for a in attributes]
+        declared = []
+        for key in ("features_deterministic", "features_stochastic"):
+            values = self.metadata.get(key) or []
+            if not isinstance(values, list) or any(not isinstance(v, str) for v in values):
+                self.errors.append(f"{key} must be a list of feature names")
+            else:
+                declared.extend(values)
+        if set(attr_names[2:]) != set(declared):
+            self.errors.append("Feature columns must match declared deterministic and stochastic features")
+        steps = self.metadata.get("feature_steps", {})
+        provided = set()
+        if isinstance(steps, dict):
+            for step, cfg in steps.items():
+                values = cfg.get("provides") if isinstance(cfg, dict) else None
+                if not isinstance(values, list) or any(not isinstance(v, str) for v in values):
+                    self.errors.append(f"Feature step '{step}' provides must be a list of feature names")
+                else:
+                    provided.update(values)
+            if provided != set(declared):
+                self.errors.append("Feature steps must provide exactly the declared features")
         if attr_names[0] != "instance_id":
             self.errors.append(
                 f"feature_values.arff: first attribute must be 'instance_id', got '{attr_names[0]}'"
@@ -558,6 +587,11 @@ class ASlibSpecLinter:
         data = self._load_arff("cv.arff")
         if data is None:
             return
+
+        try:
+            validate_cv_arff(data, self.instance_ids_per_file.get("algorithm_runs.arff", set()))
+        except ValueError as exc:
+            self.errors.append(f"cv.arff: {exc}")
 
         attributes = data.get("attributes", [])
         attr_names = [a[0] for a in attributes]
