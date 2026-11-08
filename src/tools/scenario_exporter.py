@@ -31,6 +31,7 @@ def export_aslib_scenario(
     n_folds: int = 10,
     seed: int | None = 1234,
     algorithm_metadata: dict[str, dict[str, Any]] | None = None,
+    feature_runstatus_csv_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Exports performance and feature CSV tables into a spec-compliant ASlib scenario directory.
 
@@ -46,6 +47,7 @@ def export_aslib_scenario(
         generate_cv: Whether to automatically generate cv.arff fold assignments.
         n_folds: Number of CV folds to generate.
         seed: Random seed for CV generation.
+        feature_runstatus_csv_path: Optional instance-by-ALL matrix of ASlib statuses.
 
     Returns:
         Summary dict containing generated file paths, instance counts, and metadata.
@@ -58,6 +60,9 @@ def export_aslib_scenario(
         raise FileNotFoundError(f"Performance CSV not found: {perf_file}")
     if not feat_file.is_file():
         raise FileNotFoundError(f"Feature CSV not found: {feat_file}")
+
+    if target_dir.exists() and (not target_dir.is_dir() or any(target_dir.iterdir())):
+        raise ValueError("Export destination must be an empty directory")
 
     # Load data
     perf_df = read_matrix_csv(perf_file)
@@ -132,6 +137,27 @@ def export_aslib_scenario(
         cost_values = costs_df.to_numpy(dtype=float)
         if np.isinf(cost_values).any() or (cost_values < 0).any():
             raise ValueError("Feature costs must be non-negative and finite or missing")
+    statuses = None
+    allowed_statuses = {
+        "ok", "timeout", "memout", "presolved", "crash", "unknown", "other"
+    }
+    if feature_runstatus_csv_path is not None:
+        statuses = read_matrix_csv(feature_runstatus_csv_path, strings=True)
+        if (
+            set(statuses.index) != set(common_instances)
+            or list(statuses.columns) != ["ALL"]
+        ):
+            raise ValueError("Feature statuses must contain all instances and one ALL column")
+        if not statuses["ALL"].isin(allowed_statuses).all():
+            raise ValueError("Invalid feature runstatus")
+    assumptions = [
+        "All features belong to one ALL step",
+        "Features are declared deterministic",
+    ]
+    if statuses is None:
+        assumptions.append("Feature status is unknown for missing values, otherwise assumed ok")
+    if algorithm_metadata is None:
+        assumptions.append("Algorithms are assumed deterministic with empty configurations")
     target_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Write description.txt (YAML)
@@ -235,7 +261,13 @@ def export_aslib_scenario(
         ("ALL", ["ok", "timeout", "memout", "presolved", "crash", "unknown", "other"]),
     ]
     fs_data = [
-        [inst, 1, "timeout" if inst_has_timeout_feature[inst] else "ok"]
+        [
+            inst,
+            1,
+            str(statuses.loc[inst, "ALL"])
+            if statuses is not None
+            else "unknown" if inst_has_timeout_feature[inst] else "ok",
+        ]
         for inst in common_instances
     ]
     fs_dict = {
@@ -320,4 +352,5 @@ def export_aslib_scenario(
         "cutoff": float(cutoff),
         "objective": objective,
         "has_cv": generate_cv,
+        "assumptions": assumptions,
     }

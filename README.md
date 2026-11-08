@@ -223,6 +223,7 @@ Export tabular CSV benchmarks into an ASlib scenario directory (`description.txt
   - `generate_cv` (`bool`, default `true`): Whether to automatically generate balanced CV folds.
   - `n_folds` (`int`, default `10`): Number of CV folds to generate if `generate_cv` is true.
   - `seed` (`int | null`, default `null`): Random seed for reproducible fold generation.
+  - `feature_runstatus_csv_path` (`str | null`, default `null`): Optional CSV with matching instance IDs and one `ALL` column containing ASlib feature statuses. Without it, missing features receive `unknown` and complete features are assumed `ok`.
   - `algorithm_metadata` (`dict | null`, default `null`): Per-algorithm `configuration` (string) and `deterministic` (boolean). Omission declares deterministic algorithms with empty configurations.
 - **Returns**: Dictionary with `message`, `scenario_id`, `output_dir`, `created_files`, and file `artifacts`.
 
@@ -342,3 +343,7 @@ ASLIB_DATA_DIR=/tmp/aslib_data uv run pytest
 - Permutation p-values are empirical, one-sided, and unadjusted for selecting the best observed candidate or multiple comparisons. Interpret them as exploratory comparisons rather than confirmatory significance claims.
 - To reuse generated CV folds, pass their CSV artifact via `aslib_get_cv_split(cv_csv_path=...)`. Scenario directories are not modified. Provide a seed for reproducible generation.
 - Upstream `change_perf_measure` ignores index zero; the wrapper corrects that case. Upstream process exits are translated into recoverable tool errors, so malformed scenarios do not end the MCP session. The linter checks instance coverage for every algorithm/repetition combination; lint unfamiliar scenarios before loading them.
+
+- Export destinations must be absent or empty. Reusing a populated directory raises an error before writing, preventing stale CV assignments or feature costs from surviving a new export. Export results report metadata assumptions. Explicit feature statuses are preserved; missing feature values alone never imply a timeout.
+- Permutation testing processes bounded batches (at most one million entries per batch, except when a single instance vector exceeds that size), preserving seeded results while avoiding a full permutations-by-instances matrix.
+- Selector evaluation and scenario-backed permutation results include scenario input SHA-256 hashes, the local Git revision when available, and whether the scenario has local Git changes. Hashes identify the actual input files even outside Git. Selector results also report the active measure, baseline definitions, feature-cost assumptions, and exploratory significance interpretation.

@@ -1,4 +1,4 @@
-"""Regression tests for scientific results and usable scenario loading."""
+"""Tests for scenario loader."""
 
 from pathlib import Path
 
@@ -7,13 +7,11 @@ import pandas as pd
 import pytest
 
 from src.tools.aslib_scenario import (
-    aslib_permutation_test,
     aslib_read_csv,
     aslib_read_scenario,
     aslib_validate_scenario,
 )
 from src.tools.selector_evaluator import SelectorEvaluator
-from src.tools.spec_checker import lint_scenario_spec
 
 
 def edit_arff(path, mutate):
@@ -24,30 +22,6 @@ def edit_arff(path, mutate):
         arff.dump(data, stream)
 
 
-@pytest.mark.parametrize("mixed_repetitions", [False, True])
-def test_unknown_used_cost_is_rejected(mini_scenario_dir, tmp_path, mixed_repetitions):
-    def change(data):
-        data["data"][0][2] = None
-        if mixed_repetitions:
-            row = data["data"][0].copy()
-            row[1], row[2] = 2, 0.2
-            data["data"].append(row)
-
-    edit_arff(mini_scenario_dir / "feature_costs.arff", change)
-    evaluator = SelectorEvaluator(mini_scenario_dir)
-    path = tmp_path / "choices.csv"
-    pd.DataFrame({"selector": ["algo_b"] * 5}, index=evaluator.instances).to_csv(path)
-    with pytest.raises(ValueError, match="Unknown.*cost"):
-        evaluator.evaluate(path, run_significance_tests=False)
-    # Deliberately excluding feature costs remains possible and explicit.
-    result = evaluator.evaluate(
-        path, include_feature_costs=False, run_significance_tests=False
-    )
-    assert not result["feature_costs_included"]
-    stats = {row["name"]: row for row in result["rankings"]}
-    assert stats["selector"]["par_score"] == 4.0
-
-
 def test_read_artifact_preserves_unknown_cost(mini_scenario_dir):
     edit_arff(
         mini_scenario_dir / "feature_costs.arff",
@@ -56,15 +30,6 @@ def test_read_artifact_preserves_unknown_cost(mini_scenario_dir):
     result = aslib_read_scenario(str(mini_scenario_dir))
     artifact = next(a for a in result["artifacts"] if "cost" in a["description"])
     assert pd.isna(pd.read_csv(artifact["path"], index_col=0).loc["inst_1", "ALL"])
-
-
-def test_lint_rejects_missing_algorithm_measurement(mini_scenario_dir):
-    edit_arff(
-        mini_scenario_dir / "algorithm_runs.arff", lambda data: data["data"].pop(0)
-    )
-    result = lint_scenario_spec(mini_scenario_dir)
-    assert not result["is_valid"]
-    assert any("coverage" in error.lower() for error in result["errors"])
 
 
 @pytest.mark.parametrize(
@@ -102,21 +67,6 @@ def test_csv_rejects_extra_performance_instances(tmp_path):
     cv.write_text("id,fold\ni1,1\n")
     with pytest.raises(ValueError, match="same instances"):
         aslib_read_csv(str(perf), str(feat), cv_csv_path=str(cv))
-
-
-@pytest.mark.parametrize("factor, mean", [(1, 5.0), (0.5, 4.0), (20, 43.0)])
-def test_scenario_permutation_honors_par_factor(mini_scenario_dir, factor, mean):
-    result = aslib_permutation_test(
-        scenario_dir=str(mini_scenario_dir),
-        algo1="algo_a",
-        algo2="algo_b",
-        par_factor=factor,
-        permutations=100,
-        seed=7,
-    )
-    # algo_a: [1,8,4,timeout,2], cutoff=10.
-    assert result["candidate_1"]["mean"] == mean
-    assert result["candidate_2"]["mean"] == 4.0
 
 
 def test_categorical_features_aggregate_by_mode(mini_scenario_dir):
@@ -183,64 +133,3 @@ def test_categorical_all_missing_repetitions_remain_missing(mini_scenario_dir):
     assert pd.isna(table.loc["inst_1", "feat_1"])
     assert table.loc["inst_2", "feat_1"] == "low"
     assert table.index.tolist() == [f"inst_{i}" for i in range(1, 6)]
-
-
-@pytest.mark.parametrize("status", ["crash", "timeout"])
-@pytest.mark.parametrize("factor, mean", [(0.5, 4.8), (20, 82.8)])
-def test_scenario_permutation_penalizes_failed_run_below_cutoff(
-    mini_scenario_dir, status, factor, mean
-):
-    def change(data):
-        names = [name for name, _ in data["attributes"]]
-        for row in data["data"]:
-            if row[0] == "inst_1" and row[names.index("algorithm")] == "algo_a":
-                row[names.index("runtime")] = 1.0
-                row[names.index("runstatus")] = status
-
-    edit_arff(mini_scenario_dir / "algorithm_runs.arff", change)
-    result = aslib_permutation_test(
-        scenario_dir=str(mini_scenario_dir),
-        algo1="algo_a",
-        algo2="algo_b",
-        par_factor=factor,
-        permutations=100,
-        seed=7,
-    )
-    # algo_a: [failed,8,4,timeout,2]; both failures cost cutoff * factor.
-    assert result["candidate_1"]["mean"] == pytest.approx(mean)
-    assert result["candidate_2"]["mean"] == 4.0
-
-
-@pytest.mark.parametrize("presolved, score", [(False, 4.2), (True, 0.2)])
-def test_unknown_cost_is_allowed_for_steps_not_executed(
-    mini_scenario_dir, tmp_path, presolved, score
-):
-    import yaml
-
-    description_path = mini_scenario_dir / "description.txt"
-    description = yaml.safe_load(description_path.read_text())
-    description["feature_steps"]["unused"] = {"provides": [], "requires": []}
-    if presolved:
-        description["default_steps"].append("unused")
-    description_path.write_text(yaml.safe_dump(description))
-
-    def costs(data):
-        data["attributes"].append(("unused", "NUMERIC"))
-        for row in data["data"]:
-            row.append(None)
-
-    def statuses(data):
-        data["attributes"].append(("unused", ["unknown"]))
-        for row in data["data"]:
-            if presolved:
-                row[2] = "presolved"
-            row.append("unknown")
-
-    edit_arff(mini_scenario_dir / "feature_costs.arff", costs)
-    edit_arff(mini_scenario_dir / "feature_runstatus.arff", statuses)
-    evaluator = SelectorEvaluator(mini_scenario_dir)
-    path = tmp_path / "choices.csv"
-    pd.DataFrame({"selector": ["algo_b"] * 5}, index=evaluator.instances).to_csv(path)
-    result = evaluator.evaluate(path, run_significance_tests=False)
-    stats = {row["name"]: row for row in result["rankings"]}
-    assert stats["selector"]["par_score"] == score

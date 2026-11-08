@@ -158,3 +158,80 @@ def test_lint_missing_cv_warning(make_scenario: Callable[..., Path], tmp_path: P
     res = lint_scenario_spec(target_dir)
     assert res["is_valid"] is True
     assert any("cv.arff not found" in w for w in res["warnings"])
+
+
+def edit_arff(path, mutate):
+    with path.open() as stream:
+        data = arff.load(stream)
+    mutate(data)
+    with path.open("w") as stream:
+        arff.dump(data, stream)
+
+
+def test_lint_rejects_missing_algorithm_measurement(mini_scenario_dir):
+    edit_arff(
+        mini_scenario_dir / "algorithm_runs.arff", lambda data: data["data"].pop(0)
+    )
+    result = lint_scenario_spec(mini_scenario_dir)
+    assert not result["is_valid"]
+    assert any("coverage" in error.lower() for error in result["errors"])
+
+
+def change_arff(path, mutate):
+    with path.open() as f:
+        data = arff.load(f)
+    mutate(data)
+    with path.open("w") as f:
+        arff.dump(data, f)
+
+
+@pytest.mark.parametrize(
+    "mutation", ["missing", "duplicate", "type", "algorithm", "repetition"]
+)
+def test_invalid_algorithm_runs_rejected(mini_scenario_dir, mutation):
+    def mutate(data):
+        if mutation == "missing":
+            data["data"][0][3] = None
+        elif mutation == "duplicate":
+            data["data"].append(data["data"][0].copy())
+        elif mutation == "type":
+            data["attributes"][3] = ("runtime", "STRING")
+        elif mutation == "algorithm":
+            data["data"][0][2] = "undeclared"
+        else:
+            data["data"][0][1] = 0
+
+    change_arff(mini_scenario_dir / "algorithm_runs.arff", mutate)
+    assert not lint_scenario_spec(mini_scenario_dir)["is_valid"]
+
+
+@pytest.mark.parametrize(
+    "mutation", ["length", "boolean", "cycle", "null_type", "configuration"]
+)
+def test_invalid_metadata_rejected(mini_scenario_dir, mutation):
+    path = mini_scenario_dir / "description.txt"
+    desc = yaml.safe_load(path.read_text())
+    if mutation == "length":
+        desc["maximize"] = []
+    elif mutation == "boolean":
+        desc["maximize"] = ["false"]
+    elif mutation == "cycle":
+        desc["feature_steps"]["ALL"]["requires"] = ["ALL"]
+    elif mutation == "null_type":
+        desc["performance_type"] = None
+    else:
+        desc["metainfo_algorithms"]["algo_a"].pop("configuration", None)
+    path.write_text(yaml.safe_dump(desc))
+    assert not lint_scenario_spec(mini_scenario_dir)["is_valid"]
+
+
+@pytest.mark.parametrize("field", ["requires", "default_steps"])
+def test_unhashable_step_names_return_diagnostics(mini_scenario_dir, field):
+    path = mini_scenario_dir / "description.txt"
+    desc = yaml.safe_load(path.read_text())
+    if field == "requires":
+        desc["feature_steps"]["ALL"][field] = [{}]
+    else:
+        desc[field] = [{}]
+    path.write_text(yaml.safe_dump(desc))
+    assert not lint_scenario_spec(mini_scenario_dir)["is_valid"]

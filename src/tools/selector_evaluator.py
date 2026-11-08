@@ -20,6 +20,7 @@ import pandas as pd
 
 from src.tools.csv_tables import read_matrix_csv
 from src.tools.permutation_tester import PermutationTester
+from src.tools.provenance import scenario_provenance
 from src.tools.scenario_loader import ASlibScenario
 
 
@@ -36,6 +37,7 @@ class SelectorEvaluator:
             raise ValueError("PAR factor must be finite and positive")
         self.par_factor = par_factor
 
+        self.provenance = scenario_provenance(self.scenario_dir)
         self.scenario = ASlibScenario()
         self.scenario.read_scenario(str(self.scenario_dir))
 
@@ -316,6 +318,15 @@ class SelectorEvaluator:
         return {
             "message": f"Successfully evaluated {len(candidate_cols)} selector(s) against scenario '{self.scenario.scenario}'.",
             "scenario_id": self.scenario.scenario,
+            "provenance": self.provenance,
+            "assumptions": {
+                "performance_measure": self.scenario.performance_measure[0],
+                "sbs_selection": "evaluated instances (descriptive baseline)",
+                "baseline_feature_costs_included": False,
+                "feature_steps": "default steps and dependencies; stop on presolving",
+                "missing_feature_cost_file": "extraction overhead excluded",
+                "significance": "exploratory, one-sided, unadjusted for candidate selection and multiple comparisons",
+            },
             "num_instances": len(self.instances),
             "cutoff": self.cutoff,
             "par_factor": self.par_factor,

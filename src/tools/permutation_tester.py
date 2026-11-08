@@ -141,14 +141,18 @@ class PermutationTester:
         # Vectorized random permutations:
         # Each pair (x, y) can either stay (x, y) with diff d, or swap (y, x) with diff -d.
         # Random sign mask: +1 (keep) or -1 (swap) with 50/50 probability.
-        signs = self.rng.choice([-1.0, 1.0], size=(permutations - 1, n))
-        perm_means = np.mean(signs * diffs, axis=1)
-
-        # Include the original observed difference
-        all_diffs = np.concatenate(([target_diff], perm_means))
-
-        # One-sided p-value: proportion of permuted mean differences as extreme or more extreme (<= target_diff)
-        p_value = float(np.sum(all_diffs <= target_diff) / permutations)
+        # Limit each batch to roughly 8 MB per floating-point matrix.
+        batch_size = max(1, min(1024, 1_000_000 // n))
+        extreme = 1  # Include the observed statistic.
+        remaining = permutations - 1
+        while remaining:
+            count = min(batch_size, remaining)
+            signs = self.rng.choice([-1.0, 1.0], size=(count, n))
+            signs *= diffs
+            perm_means = np.mean(signs, axis=1)
+            extreme += int(np.count_nonzero(perm_means <= target_diff))
+            remaining -= count
+        p_value = extreme / permutations
 
         is_significant = bool(p_value < alpha)
         winner = winner_candidate if is_significant else "not_significant"
@@ -224,8 +228,10 @@ def permutation_test_scenario(
         vec2 = np.where(ok[algo2] & (vec2 < cutoff), vec2, cutoff * par_factor)
         cutoff = None  # Scores are already penalized, including factors below one.
 
+    from src.tools.provenance import scenario_provenance
+
     tester = PermutationTester(seed=seed)
-    return tester.run_test(
+    result = tester.run_test(
         vec1=vec1,
         vec2=vec2,
         alpha=alpha,
@@ -237,3 +243,5 @@ def permutation_test_scenario(
         noise=noise,
         maximize=maximize,
     )
+    result["provenance"] = scenario_provenance(scenario_dir)
+    return result

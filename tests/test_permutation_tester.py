@@ -2,9 +2,14 @@
 
 from pathlib import Path
 
+import arff
 import numpy as np
 import pytest
+import yaml
 
+from src.tools.aslib_scenario import (
+    aslib_permutation_test,
+)
 from src.tools.permutation_tester import PermutationTester, permutation_test_scenario
 
 
@@ -119,3 +124,141 @@ def test_permutation_test_scenario_unknown_algorithm_raises(mini_scenario_dir: P
             algo1="algo_a",
             algo2="algo_unknown",
         )
+
+
+def test_batched_permutation_matches_seeded_reference():
+    a = np.arange(7, dtype=float)
+    b = a + np.array([1, -2, 3, -4, 5, -6, 7])
+    permutations = 1501
+    observed = -abs(a.mean() - b.mean())
+    diffs = a - b if a.mean() < b.mean() else b - a
+    signs = np.random.default_rng(42).choice(
+        [-1.0, 1.0], size=(permutations - 1, len(a))
+    )
+    expected = (
+        1 + np.count_nonzero(np.mean(signs * diffs, axis=1) <= observed)
+    ) / permutations
+    assert PermutationTester(42).run_test(a, b, permutations=permutations)[
+        "p_value"
+    ] == round(expected, 5)
+
+
+def test_permutation_uses_bounded_batches(monkeypatch):
+    class RecordingRng:
+        def __init__(self):
+            self.rng = np.random.default_rng(42)
+            self.sizes = []
+
+        def choice(self, values, size):
+            self.sizes.append(size)
+            return self.rng.choice(values, size=size)
+
+    tester = PermutationTester(42)
+    recorder = RecordingRng()
+    monkeypatch.setattr(tester, "rng", recorder)
+    tester.run_test(np.ones(2000), np.ones(2000) * 2, permutations=1201)
+    assert len(recorder.sizes) > 1
+    assert max(rows * columns for rows, columns in recorder.sizes) <= 1_000_000
+
+
+def test_scenario_permutation_reports_provenance(mini_scenario_dir):
+    from src.tools.permutation_tester import permutation_test_scenario
+
+    result = permutation_test_scenario(
+        mini_scenario_dir, "algo_a", "algo_b", permutations=20
+    )
+    assert "algorithm_runs.arff" in result["provenance"]["sha256"]
+
+
+@pytest.mark.parametrize("factor, mean", [(1, 5.0), (0.5, 4.0), (20, 43.0)])
+def test_scenario_permutation_honors_par_factor(mini_scenario_dir, factor, mean):
+    result = aslib_permutation_test(
+        scenario_dir=str(mini_scenario_dir),
+        algo1="algo_a",
+        algo2="algo_b",
+        par_factor=factor,
+        permutations=100,
+        seed=7,
+    )
+    # algo_a: [1,8,4,timeout,2], cutoff=10.
+    assert result["candidate_1"]["mean"] == mean
+    assert result["candidate_2"]["mean"] == 4.0
+
+
+def edit_arff(path, mutate):
+    with path.open() as stream:
+        data = arff.load(stream)
+    mutate(data)
+    with path.open("w") as stream:
+        arff.dump(data, stream)
+
+
+@pytest.mark.parametrize("status", ["crash", "timeout"])
+@pytest.mark.parametrize("factor, mean", [(0.5, 4.8), (20, 82.8)])
+def test_scenario_permutation_penalizes_failed_run_below_cutoff(
+    mini_scenario_dir, status, factor, mean
+):
+    def change(data):
+        names = [name for name, _ in data["attributes"]]
+        for row in data["data"]:
+            if row[0] == "inst_1" and row[names.index("algorithm")] == "algo_a":
+                row[names.index("runtime")] = 1.0
+                row[names.index("runstatus")] = status
+
+    edit_arff(mini_scenario_dir / "algorithm_runs.arff", change)
+    result = aslib_permutation_test(
+        scenario_dir=str(mini_scenario_dir),
+        algo1="algo_a",
+        algo2="algo_b",
+        par_factor=factor,
+        permutations=100,
+        seed=7,
+    )
+    # algo_a: [failed,8,4,timeout,2]; both failures cost cutoff * factor.
+    assert result["candidate_1"]["mean"] == pytest.approx(mean)
+    assert result["candidate_2"]["mean"] == 4.0
+
+
+@pytest.mark.parametrize("values", [[float("nan")], [float("inf")], [[1, 2]]])
+def test_invalid_permutation_vectors_rejected(values):
+    with pytest.raises(ValueError):
+        PermutationTester().run_test(values, values)
+
+
+def quality_scenario(path):
+    """Convert an independent copy of measured runs into a quality benchmark."""
+    desc_path = path / "description.txt"
+    desc = yaml.safe_load(desc_path.read_text())
+    desc.update(
+        performance_measures=["accuracy"],
+        performance_type=["solution_quality"],
+        maximize=[True],
+        algorithm_cutoff_time=0,
+    )
+    desc_path.write_text(yaml.safe_dump(desc))
+    runs = path / "algorithm_runs.arff"
+    with runs.open() as f:
+        data = arff.load(f)
+    data["attributes"][3] = ("accuracy", "NUMERIC")
+    scores = {"algo_a": 0.9, "algo_b": 0.7, "algo_c": 0.5}
+    for row in data["data"]:
+        row[3], row[4] = scores[row[2]], "ok"
+    with runs.open("w") as f:
+        arff.dump(data, f)
+
+
+def test_quality_scenario_permutation_does_not_apply_runtime_cutoff(mini_scenario_dir):
+    quality_scenario(mini_scenario_dir)
+    result = permutation_test_scenario(
+        mini_scenario_dir, "algo_a", "algo_b", permutations=1000
+    )
+    assert result["candidate_1"]["mean"] == pytest.approx(0.9)
+    assert result["candidate_2"]["mean"] == pytest.approx(0.7)
+
+
+def test_exact_maximization_tail_includes_observed_assignment():
+    # With two equal positive differences, a one-sided exact tail is 1/4.
+    result = PermutationTester(seed=12).run_test(
+        [2, 2], [1, 1], maximize=True, permutations=50000
+    )
+    assert result["p_value"] == pytest.approx(0.25, abs=0.01)

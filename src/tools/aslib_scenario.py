@@ -816,6 +816,9 @@ def aslib_export_scenario(
         dict[str, dict[str, Any]] | None,
         "Algorithm configuration and deterministic flags; defaults to deterministic with empty configuration",
     ] = None,
+    feature_runstatus_csv_path: Annotated[
+        str | None, "Optional CSV with instance IDs and one ALL feature runstatus column"
+    ] = None,
 ) -> dict:
     """Export numeric CSV matrices into an ASlib scenario with explicit metadata assumptions.
 
@@ -841,6 +844,7 @@ def aslib_export_scenario(
         n_folds=n_folds,
         seed=seed,
         algorithm_metadata=algorithm_metadata,
+        feature_runstatus_csv_path=feature_runstatus_csv_path,
     )
     res["reference"] = ASLIB_SPEC_REFERENCE
     res["artifacts"] = [
