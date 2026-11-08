@@ -340,6 +340,49 @@ git clone --depth 1 https://github.com/coseal/aslib_data.git /tmp/aslib_data
 ASLIB_DATA_DIR=/tmp/aslib_data uv run pytest
 ```
 
+### Permanent corpus compatibility test
+
+`tests/test_scenario_corpus.py` checks all 45 scenarios against the reviewed
+`coseal/aslib_data` revision `551b22beef8df17de59286b4822ef720e0aa4d6f`.
+Use a separate checkout for this pinned test so normal cache synchronization
+does not change its inputs:
+
+```bash
+git clone https://github.com/coseal/aslib_data.git /tmp/aslib-corpus
+git -C /tmp/aslib-corpus checkout --detach 551b22beef8df17de59286b4822ef720e0aa4d6f
+ASLIB_DATA_DIR=/tmp/aslib-corpus uv run pytest tests/test_scenario_corpus.py -q
+```
+
+The integration tests never download or modify corpus data. They require a
+local corpus and compare its scenario inventory and SHA-256 input hashes with
+`tests/fixtures/aslib_corpus_baseline.json` before checking loading, matrix sizes,
+performance metric preservation, CV repetitions, and lint diagnostics.
+They are excluded by `-m "not integration"`.
+
+At this revision all scenarios load, while 16 have known lint errors. These
+include historical scalar metadata, nominal algorithm identifiers, missing
+algorithm configurations, undeclared algorithms, and inconsistent feature-step
+declarations. Algorithm-feature validation also produces explicit warnings.
+The baseline records each error and warning with its occurrence count, rather
+than skipping those scenarios or marking all their tests as expected failures.
+Set-valued diagnostics are sorted so hash randomization does not affect results.
+
+New or increased diagnostics fail as potential regressions. Resolved or reduced
+diagnostics also fail, identifying stale baseline entries: after an intentional
+compatibility fix, add a focused synthetic regression test and remove or reduce
+only the affected diagnostics in the baseline. Preserve the input hashes for
+code-only fixes; do not make the test green by editing benchmark data or broadly
+ignoring errors. Existing diagnostics are historical observations, not desired
+behavior or permission to weaken scientific validation.
+
+When adopting a new upstream corpus revision, review its data changes separately,
+then update the revision, inventory, hashes, dimensions, repetitions, and affected
+diagnostics together. Diagnostic wording changes also require baseline review.
+The baseline covers loading and linting compatibility; it does not certify
+scientific score correctness, selector quality, or complete ASlib compliance.
+
+### Validation scope and limitations
+
 - The reader adapts the pinned upstream package: medians for performance and known costs, means for numeric features, modes for categorical features and runstatuses, and preservation of every CV repetition (repetition 1 is active by default). Modal ties use the first observed non-missing value; all-missing categorical groups remain missing. Feature costs remain unknown if any repetition is unknown. Loading negates maximizing quality scores internally; evaluation reports restore original score units.
 - The linter is a partial implementation of the specification, not the official checker or a certification service. It checks core metadata, measurement keys, numeric performance schemas, dependencies and instance alignment. Algorithm-feature files and experiment provenance require separate review. `is_valid` means no errors among the implemented checks.
 - CSV reading and export require matching, unique string instance IDs and reject duplicate headers. CSV reading preserves identifiers such as `001`, generates at most ten folds bounded by the instance count, and omits CV for a single instance. Optional CV CSVs must assign every instance exactly once to a positive integer fold with at least two distinct folds.

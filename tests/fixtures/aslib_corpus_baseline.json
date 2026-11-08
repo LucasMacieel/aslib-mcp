@@ -1,0 +1,1430 @@
+{
+  "repository": "https://github.com/coseal/aslib_data",
+  "revision": "551b22beef8df17de59286b4822ef720e0aa4d6f",
+  "scenarios": {
+    "ASP-POTASSCO": {
+      "sha256": {
+        "algorithm_runs.arff": "7fa48b0c896e52e018ac207222b218e6f4844f528ddc18459b0c7f47f601975e",
+        "cv.arff": "caa82ec06dbb0f00a08c53ba2d589d79f74d7e07a240178e46aa8945986dbab8",
+        "description.txt": "f822f72f3ec2a623d84f5ae032f29dc09ce65db94355ac361b443e401faa7596",
+        "feature_costs.arff": "5f2bf46193edd03ee889511b2bf326b1289efc09898f641d24bff5d643e4e42e",
+        "feature_runstatus.arff": "1c5231e3775823a75d4cb15eb25c2b8d80b0e64d8b5bbe312b7b0c3967779576",
+        "feature_values.arff": "32ce282c7b278d6a21465c051e19099a6cc7f5157938c7aab4286db2e21516b8"
+      },
+      "performance_shape": [
+        1294,
+        11
+      ],
+      "feature_shape": [
+        1294,
+        138
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "BNSL-2016": {
+      "sha256": {
+        "algorithm_runs.arff": "a19068fbff3bff52d794c3c2374a45cd171aaee7a3fc2d83edda449b5d874c3a",
+        "cv.arff": "1b06ae6f7b76cc2ef6d41a730968255281e66a1b758d0fa30c73a0b859ef0a67",
+        "description.txt": "97db5247356a4c6ae5b207e9d53d4cd65dcaadfb7c2d3d61a64cea5372b74f82",
+        "feature_costs.arff": "75fe5c60129d727660ec6f9e8bd4e6bbb88b388a61ba7268b0f37cdc8a221b2d",
+        "feature_runstatus.arff": "a4f78600d686f79f8b7d1e19b5b119f7d8747370015416f77ee0edce4022dc26",
+        "feature_values.arff": "f9d77a607911c6db8b4ff26bfe3db6690864e989ae92c3b2042f62de5ce4a5b3"
+      },
+      "performance_shape": [
+        1179,
+        8
+      ],
+      "feature_shape": [
+        1179,
+        86
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "CPMP-2015": {
+      "sha256": {
+        "algorithm_runs.arff": "ad1c85963b5450cedae431d3b8fd8e93bf009af9518f7d91febad4aad31638ab",
+        "algorithm_runs_test.arff": "c8969ff69bcb570cb028e91dd1f22c3ddf72a9b793f6d876df766e7c5617deef",
+        "cv.arff": "a749247cffb8bf73c5203b798efa9b9f4b8bd7ddc56bfa2ce147ed025732e97c",
+        "description.txt": "5de92825d02853f1ce5f38c446bd46a333f98e9e536f501560cc5bd550a4df27",
+        "feature_runstatus.arff": "fa5d867c1846690da06171c95a9b468baeeb9a8f2bd5699b491c883b94e87b74",
+        "feature_runstatus_test.arff": "bf5275614a4445cff925bb28485db717bdd4972ed08ff326457ce67e00f1a45f",
+        "feature_values.arff": "f626817d09c5c37504d09cad16a2ae92a6e896f1ffa999237c5e6d6a45d721d5",
+        "feature_values_test.arff": "47ad2848b8eeb342569eae8ac7f2b6d1032252b2bdc83cc0f0d34bcc2a87d7b3"
+      },
+      "performance_shape": [
+        527,
+        4
+      ],
+      "feature_shape": [
+        527,
+        22
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "CSP-2010": {
+      "sha256": {
+        "algorithm_runs.arff": "7652ca48c087a252ae8ce2cb2b1fa67b42fc0557e752f9a4902b3da84ad043a2",
+        "cv.arff": "f0d6c32bcf1951c26126b8d00a38fe5efa4864f3143a95d7a8d252e064a4b452",
+        "description.txt": "16c3ecf475085418fb1a2f21168e8cfacc843ad05b48c7736eac2735f93c36ad",
+        "feature_runstatus.arff": "9431368d081d706937f5bee46e9f030f9904c76def503e105bf18b217904c46d",
+        "feature_values.arff": "b44cfe9541e4198ac163e3e592f5da74d440b9420ffc9f505f400f39bf800c80"
+      },
+      "performance_shape": [
+        2024,
+        2
+      ],
+      "feature_shape": [
+        2024,
+        86
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "CSP-MZN-2013": {
+      "sha256": {
+        "algorithm_runs.arff": "9f062ba36bd82e108f5f35c0b4430f76732e26376b946a173d1e56c772ea465b",
+        "cv.arff": "db1669401fd275af7bfad05ef5cf5af71ada91c50d6eb32e83eaf4e5bc343f2b",
+        "description.txt": "e2741bacc444a381ad7a5fcee2f8ac8e2c86a2d2e8c5326886732674b0c71a77",
+        "feature_costs.arff": "b4753d4507ba0c2d1cdfd4a445b0bb14fcc64f97ba66222c9f098fe653162310",
+        "feature_runstatus.arff": "198d1a7ae04e04cace6a86b5104aa6c1607acedea916a7da9bd654beb41e0640",
+        "feature_values.arff": "cfd5df5d82d8e6e2b0170658f2b818a372d07f312629b63b4e4b14c8b254cc0d",
+        "ground_truth.arff": "f839efe415626728fe14fc64763e20112e5a9759b3a85dbb051bc391bbdbdda5"
+      },
+      "performance_shape": [
+        4642,
+        11
+      ],
+      "feature_shape": [
+        4642,
+        155
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "algorithm_runs.arff: algorithm attribute must be STRING": 1
+      },
+      "warnings": {},
+      "performance_measures": [
+        "runtime",
+        "solved"
+      ]
+    },
+    "CSP-Minizinc-Obj-2016": {
+      "sha256": {
+        "algorithm_runs.arff": "b5a23df24ab27f9469ae1c0245c3e2d2ef7080d897df9802e8b7229988df20e7",
+        "cv.arff": "587e34b4485b191a79ca8b6cf681f532e950d9d52601b5b8748eaaad42be5468",
+        "description.txt": "eb21374c8230de37ffb2981f3cfc0ea258a04e070cce1145ee8333ede82df8c9",
+        "feature_costs.arff": "1f117298005d30d3706f49641839aa06d8cfd3609c0edc38889f3e7f27813ae6",
+        "feature_runstatus.arff": "3cc11f14ff63afdf7023577210ffb913d1fc235cfa34d7de57b31d5dd1874a72",
+        "feature_values.arff": "fb5bd65d9ea1960b6b0d9ff9933813202a13ef0bf21ee614e2f1c4aba1c6cdd0"
+      },
+      "performance_shape": [
+        100,
+        22
+      ],
+      "feature_shape": [
+        100,
+        95
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "obj",
+        "time"
+      ]
+    },
+    "CSP-Minizinc-Time-2016": {
+      "sha256": {
+        "algorithm_runs.arff": "052c3887f491bd73e34dfca3f16d663c3fb9a9f84d63a108c4157a26c9130b3f",
+        "cv.arff": "60f23c5d87db05f8d1a3bb0cc2f6100a025b653891157b36bd6500783532ca71",
+        "description.txt": "b1548263a2f67d0ece17314d879217ad00c81123e68def4072d816bf65e1d277",
+        "feature_costs.arff": "3e7b6f961e9802215b656888bf27bfed1ab6cff77071f6c9762dd8fc3e1ac18f",
+        "feature_runstatus.arff": "555a53c1e30edbb64bf817db967f5191859110e27683312c65ce2de3263afc81",
+        "feature_values.arff": "638a7131eea799b7ee4f1e8ebede8c4adf49ba8ce0e5f2f3e5d905200b88c73e"
+      },
+      "performance_shape": [
+        100,
+        20
+      ],
+      "feature_shape": [
+        100,
+        95
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "PAR10"
+      ]
+    },
+    "GLUHACK-2018": {
+      "sha256": {
+        "algorithm_runs.arff": "a0324b46fd0495a88c16e347052182ddcb7b6db83caaaedaaa05bfae85455269",
+        "cv.arff": "6d7914a552c92cb6770c4dcffb283703ec09f784ca72f9261f46e5fb743fb9aa",
+        "description.txt": "e2b4c302f2d3b081c87c45561fedbbf27e6127e855a7b6fa0acb88faf0e01347",
+        "feature_runstatus.arff": "8d1ebdb86398c3690a1dffa04119a05ad6a114c32e06938135d29420e37a38b5",
+        "feature_values.arff": "41a1133bdf5a52bfa4b030343adfec7570495aa0c475941a9a976f37f30eae6a"
+      },
+      "performance_shape": [
+        353,
+        8
+      ],
+      "feature_shape": [
+        353,
+        50
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "GLUHACK-2018-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "b82b86041f7b66a191f6148e0ba3fbd0e1bec2af9a5f31a6e23b0fab30c2ec85",
+        "algorithm_feature_values.arff": "8ebb7bd1a44e1570dccadec23eb60c22e8d7dd344f06e1d57f01b6f16f5bc630",
+        "algorithm_runs.arff": "a0324b46fd0495a88c16e347052182ddcb7b6db83caaaedaaa05bfae85455269",
+        "cv.arff": "6d7914a552c92cb6770c4dcffb283703ec09f784ca72f9261f46e5fb743fb9aa",
+        "description.txt": "392317e655cfc5d64732fd91d6c018dd8727dd15eac16213a9c92c4aedde26c1",
+        "feature_runstatus.arff": "8d1ebdb86398c3690a1dffa04119a05ad6a114c32e06938135d29420e37a38b5",
+        "feature_values.arff": "41a1133bdf5a52bfa4b030343adfec7570495aa0c475941a9a976f37f30eae6a"
+      },
+      "performance_shape": [
+        353,
+        8
+      ],
+      "feature_shape": [
+        353,
+        50
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "GRAPHS-2015": {
+      "sha256": {
+        "algorithm_runs.arff": "bcfc031054d30706d715fd823594ee48c48ae013760198b87e29216ccb848edd",
+        "cv.arff": "f32565746154eac7cdceda85292bfcdaa47008e2bd198e221544360190c1d4af",
+        "description.txt": "b54120ce2aaa676a8941470d5c7cedf50ce88568f3a8d14f48e24091ea37e48a",
+        "feature_costs.arff": "e7af093d6b2bc79544dbc69095521dcfeeb4eb74de4a697be83c43bcba5575c1",
+        "feature_runstatus.arff": "3c65d26fd356c8cdc9904673c8c6f13c7484186cd45de7c9d1a9c046701b7b36",
+        "feature_values.arff": "89cfef249a8a8b6bd53fedffcf1f816e8915b99f423a661e773de1210026231a"
+      },
+      "performance_shape": [
+        5725,
+        7
+      ],
+      "feature_shape": [
+        5725,
+        35
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "'maximize' must be a list of boolean values.": 1,
+        "'performance_measures' must be a non-empty list of measure names.": 1,
+        "'performance_type' must be a list ('runtime' or 'solution_quality').": 1,
+        "algorithm_runs.arff performance attributes ['runtime'] do not match description.txt measures runtime": 1
+      },
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "GRAPHS-2015-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "db98d8c7452e4b7b0f386da56c5a7a8e9c35228d459a294dc40fa9ec8901cf6c",
+        "algorithm_feature_values.arff": "cb61ed7c6ffc890181548578598ddb741483207be0148137eeb99cd1aab27c8a",
+        "algorithm_runs.arff": "9a2da4ed43dc478004f280dadafd4ecd1c63172e1b82b4234e1276d62a6d7927",
+        "cv.arff": "8b8d6ec5135444be84c84f99bd45a37a7a042b378cf25d69f206b1dcd09d5131",
+        "description.txt": "74fb8a14932ee44373a305fd8096c9405468475845e57d9db8065413c97020da",
+        "feature_costs.arff": "4c15c8ff1ba249b016c53ab9044bd374f9cba7463c9a9ee63b6cc05b4d02e783",
+        "feature_runstatus.arff": "2ed86d4de19f21240b96a55c0ffd4123fb1d02abbeb62323b56b473c87a5e7f1",
+        "feature_values.arff": "ee6e7751d7cea7d8c43ef91956bc28e8368bd7e9da663a1035f2e73c711a734d"
+      },
+      "performance_shape": [
+        5725,
+        4
+      ],
+      "feature_shape": [
+        5725,
+        35
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "'maximize' must be a list of boolean values.": 1,
+        "'performance_measures' must be a non-empty list of measure names.": 1,
+        "'performance_type' must be a list ('runtime' or 'solution_quality').": 1,
+        "algorithm_runs.arff performance attributes ['runtime'] do not match description.txt measures runtime": 1,
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "IPC2018": {
+      "sha256": {
+        "algorithm_runs.arff": "131694b50ab483e187ae478fcd0338873438e968268a17d34250d1094d4a4768",
+        "cv.arff": "cc67e26e7fc62fbb15c390cb03252b463ff5e8049c35fbb699dbcd8328e14306",
+        "description.txt": "398fec0e22cc5cebca582d45ae70c85d79d2032e3dd2c576bf95272b20fc82dd",
+        "feature_costs.arff": "4a8344583b2eeb7396abf9a52dfd3fc44867b679c7edc1cda21d31eb34258f94",
+        "feature_runstatus.arff": "4a16f22c88081631e3a48da8e2e2002d2dca1b20db47e8a1ab63bb3409e64fec",
+        "feature_values.arff": "12654a7e0115df4d907159fa5703d61973535ba503d5e92867010da906aa824c"
+      },
+      "performance_shape": [
+        240,
+        15
+      ],
+      "feature_shape": [
+        240,
+        305
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Algorithm 'Complementary1' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Complementary2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'DecStar' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Delfi1' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Delfi2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'FDMS1' requires configuration and deterministic metadata": 1,
+        "Algorithm 'FDMS2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Metis1' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Metis2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Planning-PDBs' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Scorpion' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Symple-1' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Symple-2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'blind' requires configuration and deterministic metadata": 1,
+        "Algorithm 'symbolic-bidirectional' requires configuration and deterministic metadata": 1
+      },
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "MAXSAT-PMS-2016": {
+      "sha256": {
+        "algorithm_runs.arff": "dfab0953c5175c3bcb234138a434761169cd448aae5901b83b855ce7c5306ada",
+        "cv.arff": "7408806d1e733269e842151013bf9fe2ef85638a6781421624200d55b1571e5e",
+        "description.txt": "bd2b4b803a07c8c7004f91af641153f77abe43a56f5fafe605498f8d18c350ed",
+        "feature_costs.arff": "35d03c9beb6a79b7db8c7787378fde44c0e48f74b666c2c87f9a6e46ef16aad3",
+        "feature_runstatus.arff": "71e79e7a2e4c700663250029ba5f939e568993ba43c346f6757c7cce078163df",
+        "feature_values.arff": "d319230c77c80a39c69cef6d0dcecfe922cb485c8d2b0ca7ce90905dad31e327"
+      },
+      "performance_shape": [
+        601,
+        19
+      ],
+      "feature_shape": [
+        601,
+        37
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "PAR10"
+      ]
+    },
+    "MAXSAT-WPMS-2016": {
+      "sha256": {
+        "algorithm_runs.arff": "b48467c101279d351b7cbce7a8a37d914bd781e3deba1de4b120a728714f2173",
+        "cv.arff": "edea7352d0898189a53fb61721c29a4a2a2cbb2a5ba75f8ce5bcc66009ec082a",
+        "description.txt": "78ed9e803ac3c0b2c8ec33767cc54a15e15d93c24d6494bbe76eb64e0abf76e9",
+        "feature_costs.arff": "2462fcf76466011717e577e977009dff86d5c1fa3dacf6388a852c7ef0658a07",
+        "feature_runstatus.arff": "f32082f9f942aa7c6df0440cf6453733a91f591e62f74f8c29fdf4a429f7704f",
+        "feature_values.arff": "6971e21d8ba619ea79f8c9c6389b61c6ba9851cd68699af0e0c8455649041785"
+      },
+      "performance_shape": [
+        630,
+        18
+      ],
+      "feature_shape": [
+        630,
+        37
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "PAR10"
+      ]
+    },
+    "MAXSAT12-PMS": {
+      "sha256": {
+        "algorithm_runs.arff": "ed58902832d3a6cd113afac9cc56ca94363c73508001eb788eb4f915e0b7c6f5",
+        "cv.arff": "9057f3cd13119df122a610afa26005465e6c0e7ee480f01e74926ca857e3cf8c",
+        "description.txt": "181c7fd09cb4b23a82f4a2530e98362f4257a91b90c5fb5cb009b7506a89fc49",
+        "feature_costs.arff": "28f5469c145296149746db2862d8ded35253e1b909245d3a7792c820954b652a",
+        "feature_runstatus.arff": "82c198f16fb76ac6b05650ca193cd6658bb6ae0a6f442b3b27f9f5d4f71be5e3",
+        "feature_values.arff": "468b19e0f2a9f8c5cba38120ba9c3b925cd81a91b67269bd0fb46804cccd5707"
+      },
+      "performance_shape": [
+        876,
+        6
+      ],
+      "feature_shape": [
+        876,
+        37
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "MAXSAT15-PMS-INDU": {
+      "sha256": {
+        "algorithm_runs.arff": "f5fc21d765ed981a70bcd5272f9ca9e417528b46cb0341d657c5a728b25e4dc6",
+        "cv.arff": "c49f341e0aa8c01ab79a7612810ea3d10d54e240d4640e265db77e3d861a582f",
+        "description.txt": "0396e534182493607be1b37d4fbe90149b258dca91d5c1ff693d80bc0e6d3f88",
+        "feature_runstatus.arff": "b05d7b0f52ca0859448b68609a5ff69ed6e170788ed18e8258bccb07d817d57c",
+        "feature_values.arff": "dbaf50f025eb35ce6d98b5f58f859168d163becbcd43fb8e42b38791e6cbbbf0"
+      },
+      "performance_shape": [
+        601,
+        29
+      ],
+      "feature_shape": [
+        601,
+        37
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "MAXSAT19-UCMS": {
+      "sha256": {
+        "algorithm_runs.arff": "004d986ba05481eb37196eefe387a8a55f15dd2e668f1280f0f755022a231ca8",
+        "cv.arff": "c4e06941790ff0463f9322232e62cfd851a466e7da1eb1872900c5cb11917f3d",
+        "description.txt": "011e2fa7668a7d421ce8bb7ecaa1d608b02ad8787d69b22a549d9620f85c9168",
+        "feature_costs.arff": "dde19e6ec53437b7024f17bddfa57a0711204d9ccefed7d104a128bfec68c5eb",
+        "feature_runstatus.arff": "7e99b7407bb921a3e95971e62892056c0a1129d5197b23160670e8db1bd639a3",
+        "feature_values.arff": "eef4dc21e196e5e1930e62405d32bff2357339848a7afe66c5d67f29633acaba"
+      },
+      "performance_shape": [
+        572,
+        7
+      ],
+      "feature_shape": [
+        572,
+        54
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Algorithm 'MaxHS' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Open.WBO.g' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Open.WBO.ms' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Open.WBO.ms.pre' requires configuration and deterministic metadata": 1,
+        "Algorithm 'QMaxSAT2018' requires configuration and deterministic metadata": 1,
+        "Algorithm 'UWrMaxSAT' requires configuration and deterministic metadata": 1,
+        "Algorithm 'maxino2018' requires configuration and deterministic metadata": 1
+      },
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "MAXSAT19-UCMS-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "18c00e54f65b17e7dcd393e0502334c0d5dee7da24814046a6fea789fd3aca23",
+        "algorithm_feature_values.arff": "1e78987cf554787c76c475f287e9b592e05a81db4209930011aa61c7da6e0bbd",
+        "algorithm_runs.arff": "004d986ba05481eb37196eefe387a8a55f15dd2e668f1280f0f755022a231ca8",
+        "cv.arff": "c4e06941790ff0463f9322232e62cfd851a466e7da1eb1872900c5cb11917f3d",
+        "description.txt": "c97481926426b3ea89813eab71f1792d55fc1d8c489e6a398578336250aa74b9",
+        "feature_costs.arff": "dde19e6ec53437b7024f17bddfa57a0711204d9ccefed7d104a128bfec68c5eb",
+        "feature_runstatus.arff": "7e99b7407bb921a3e95971e62892056c0a1129d5197b23160670e8db1bd639a3",
+        "feature_values.arff": "eef4dc21e196e5e1930e62405d32bff2357339848a7afe66c5d67f29633acaba"
+      },
+      "performance_shape": [
+        572,
+        7
+      ],
+      "feature_shape": [
+        572,
+        54
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Algorithm 'MaxHS' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Open.WBO.g' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Open.WBO.ms' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Open.WBO.ms.pre' requires configuration and deterministic metadata": 1,
+        "Algorithm 'QMaxSAT2018' requires configuration and deterministic metadata": 1,
+        "Algorithm 'UWrMaxSAT' requires configuration and deterministic metadata": 1,
+        "Algorithm 'maxino2018' requires configuration and deterministic metadata": 1,
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "MIP-2016": {
+      "sha256": {
+        "algorithm_runs.arff": "bcee770829aa3267523eb17f6a53f3182ccf624561d093399b968aae21f19b8b",
+        "cv.arff": "3069cde82bbfcb5de401cead5337f175bd58354f679a1131fdadca38bdfae3cd",
+        "description.txt": "b5f2ab6626d0ed9194d355475a4bddab3d38070b5e223a12f26a4941a868ebaf",
+        "feature_costs.arff": "fd4065096be42b07842aee5028322f0341c1db9fa9738be6f0dde447c75ee0af",
+        "feature_runstatus.arff": "d6b0cee448d708a10fa2e815b813b50ad4f5d4753dd5e83f7278ddb7bff75016",
+        "feature_values.arff": "3914bd32465a071ff5b9c7dfd8855ecc6005271dfc7c90075985be96241775bd"
+      },
+      "performance_shape": [
+        218,
+        5
+      ],
+      "feature_shape": [
+        218,
+        143
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "PAR10"
+      ]
+    },
+    "OPENML-WEKA-2017": {
+      "sha256": {
+        "algorithm_runs.arff": "23ae3f012b8caabdd1cf1604c2ad6e05e9fb50558eb6692879f60266398d2a94",
+        "cv.arff": "be0c0141c5c15ebbc37ede90d75252ebca0c8dcd5d96b1839c87a49f5134a43d",
+        "description.txt": "9d6e3d1846849dc20b4e46e3b73d83304ebcb743db91e4f69e78612e5658fb4c",
+        "feature_runstatus.arff": "d8c0a088838fad4beea5ab9a27e98c031ff02f830fa97582f67c47054d723c01",
+        "feature_values.arff": "0e0a5829a44af6afdc3afc044a278ad694995f4528b7bdbaa26ae040f111a804"
+      },
+      "performance_shape": [
+        105,
+        30
+      ],
+      "feature_shape": [
+        105,
+        103
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "predictive_accuracy"
+      ]
+    },
+    "OPENML-WEKA-2017-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "0e1db4e30b611de7d54a35bad728c610041614698ea7d18ffe1e6525e1551327",
+        "algorithm_feature_values.arff": "c8f4918aca18ad34e8aa06e3b31a2e1da425fad3fb0fa4a3aecca339637a84ee",
+        "algorithm_runs.arff": "3d74ca95f0bdc97cdb86896ea06b1bf380bb34defc399454392a42207c5839e8",
+        "cv.arff": "7133572ac13a069cd86427e5bde5c3a1e1c3ac4537b77157b31c33034a541d83",
+        "description.txt": "38a7ff922145c479da535e30ed8f4a77328b4269f250ca5e21d8a9b02f856ab8",
+        "feature_runstatus.arff": "a6820e758e1029444cd454255982faf7f8545d84bcb898d7506a64873c32414b",
+        "feature_values.arff": "2c2462224703eb2efe7219b0660db5112d8b1be44e2b02667716e82f5343faea"
+      },
+      "performance_shape": [
+        105,
+        30
+      ],
+      "feature_shape": [
+        105,
+        103
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Undeclared algorithm '2361_weka.OneR' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2362_weka.J48' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2364_weka.IBk' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2367_weka.REPTree' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2368_weka.RandomTree' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2369_weka.RandomForest' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2370_weka.LMT' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2371_weka.HoeffdingTree' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2373_weka.JRip' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2381_weka.NaiveBayes' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2647_weka.Logistic' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2869_weka.SMO_PolyKernel' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2882_weka.SMO_RBFKernel' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2889_weka.IBk' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2891_weka.HyperPipes' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2893_weka.OLM' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2894_weka.FURIA' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2897_weka.ConjunctiveRule' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2898_weka.SimpleCart' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2900_weka.LADTree' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2903_weka.AdaBoostM1_DecisionStump' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2904_weka.AdaBoostM1_J48' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '2906_weka.Bagging_REPTree' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '6250_weka.DecisionTable' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '6352_weka.BayesNet' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '6355_weka.AdaBoostM1_NaiveBayes' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '6378_weka.LogitBoost_DecisionStump' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '8990_weka.MultilayerPerceptron' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '8994_weka.MultilayerPerceptron' in algorithm_runs.arff": 105,
+        "Undeclared algorithm '8995_weka.MultilayerPerceptron' in algorithm_runs.arff": 105,
+        "algorithm_runs.arff: no measurement coverage for algorithms ['X2361_weka.OneR', 'X2362_weka.J48', 'X2364_weka.IBk', 'X2367_weka.REPTree', 'X2368_weka.RandomTree', 'X2369_weka.RandomForest', 'X2370_weka.LMT', 'X2373_weka.JRip', 'X2381_weka.NaiveBayes', 'X2647_weka.Logistic', 'X2869_weka.SMO_PolyKernel', 'X2891_weka.HyperPipes', 'X2893_weka.OLM', 'X2897_weka.ConjunctiveRule', 'X2898_weka.SimpleCart', 'X2900_weka.LADTree', 'X2903_weka.AdaBoostM1_DecisionStump', 'X2906_weka.Bagging_REPTree', 'X6250_weka.DecisionTable', 'X6352_weka.BayesNet', 'X6378_weka.LogitBoost_DecisionStump']": 1,
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "predictive_accuracy"
+      ]
+    },
+    "PROTEUS-2014": {
+      "sha256": {
+        "algorithm_runs.arff": "97d6a1a0630ef4b59d7b241313695e9f2684d4cf9c28dd6bb1bd13396e6b3baf",
+        "cv.arff": "d79428c56fc38bd0fe001d78460d7cba9210c17a2f60626b2b18c2ba475bc92a",
+        "description.txt": "f9129766d6f10dd45ee77655b510707ab2c5a86a24956529cd11a0b821c6ab6e",
+        "feature_costs.arff": "153b108ab5e03a72ac102677de075eb43376f1fcd459e297a1e5218987b76a30",
+        "feature_runstatus.arff": "7ec5e73c937effebcb2018d49666715238077b5dbcee1385ef49caf170f2936c",
+        "feature_values.arff": "8252c4714f934277b4317f6b93c6047697484c86e04254724b1dcd745b72b6d8"
+      },
+      "performance_shape": [
+        4021,
+        22
+      ],
+      "feature_shape": [
+        4021,
+        198
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "QBF-2011": {
+      "sha256": {
+        "algorithm_runs.arff": "0415a08a59cb630d9f3c40c73520ad54ecb32e63712ef36e0c37a036b3120096",
+        "cv.arff": "18ebae1b1ec70089dca8c317e6758930b70aee63124c6cc55709d9cd552fca49",
+        "description.txt": "dfe29e646a217b34ff298eb4541001bb861e60695c097c57c428b7b42a8f925e",
+        "feature_runstatus.arff": "c9575f828a856f4d4c97bb18572fcf45cb40014a66ad4834a92e73a79ab7c5b3",
+        "feature_values.arff": "100b606db5b39fb7db113fa3fa67c4aa5ea68bdf6b61c731a4a474c49a3ab613"
+      },
+      "performance_shape": [
+        1368,
+        5
+      ],
+      "feature_shape": [
+        1368,
+        46
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "QBF-2014": {
+      "sha256": {
+        "algorithm_runs.arff": "811df956dca45afee91b40179e987b619d702297e8376f2223a99880da435cbd",
+        "cv.arff": "fd69dd2cb3a586809a43f87c0be9c3a90cfeed75b5aed9214fdfdee19489ab0f",
+        "description.txt": "b74ecb1862dbb632ba7b2a3ad8ada8d7aca57c1e512139cf27410e16e39e4a9b",
+        "feature_runstatus.arff": "c583005225d7cf4f62dfa05679795ccfa50f5e59ff288f081219d41832af0cec",
+        "feature_values.arff": "fc4f74b4885e80cf6d0b0f93ec1ce5dafadacf1f594b962df08faaf2694a10b6"
+      },
+      "performance_shape": [
+        1254,
+        14
+      ],
+      "feature_shape": [
+        1254,
+        46
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "QBF-2016": {
+      "sha256": {
+        "algorithm_runs.arff": "82a9acc4d5dab1940c842f8858206c71cbffa385ac15fa0c3142ad1b474abdda",
+        "cv.arff": "c666499064cc3d4c109a09a83accdf3bf9771d3bdf029ea85d863c4a113b065c",
+        "description.txt": "ff9aae95c61d5edfb61664014abbfb654e7745d70e9279f38a203f398eb8b2fb",
+        "feature_costs.arff": "63ac4d3fe6936a533cc34c2907b4bebdf77a1912a276c72c45f7d77627e7a2be",
+        "feature_runstatus.arff": "ee63bcda416bd19ea1cdb5fbd90c32b350745f061bab11aa7b12ec317d7374fa",
+        "feature_values.arff": "16550d9d02e9f33cd7b8e47cce7704ee8020ea5bebe02cbeb3dd8494050f49ef"
+      },
+      "performance_shape": [
+        825,
+        24
+      ],
+      "feature_shape": [
+        825,
+        46
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "PAR10"
+      ]
+    },
+    "SAT03-16_INDU": {
+      "sha256": {
+        "algorithm_runs.arff": "feb701ba4f1391d0dbdbaf23fba69aecc3a01797cc6832ab9661b2e72e19ae4e",
+        "cv.arff": "a8ca389a206954797d8c0064913c4377c3174400b9c66d5e460324ef0de2f65f",
+        "description.txt": "01cd6c0e7fe76700333fc767aba63b8141946cbee63d4dfab9402e9d5e2cdadd",
+        "feature_costs.arff": "7d698469f862de586af3ec388714cbd55fbeae833f1b4f21077d9a415074dcab",
+        "feature_runstatus.arff": "5bf9e804b408f6aee0fc798262c94617dc7d7ed565c07d992d3d8257f67c507b",
+        "feature_values.arff": "277e52d6330ae5a9b3d1d259842c6df27f8d50af5bbeed4ead308cf8a3f5a14c"
+      },
+      "performance_shape": [
+        2000,
+        10
+      ],
+      "feature_shape": [
+        2000,
+        483
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "PAR10"
+      ]
+    },
+    "SAT03-16_INDU-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "1e1627df080c155f7aaa99311db49cb5381bfc8f32666ea13007d721d1d42fe7",
+        "algorithm_feature_values.arff": "9cdec5747228b4b476effc945053df60ac8245fbd76fceba1129de307460e39c",
+        "algorithm_runs.arff": "9f85bd4b17a9e3f22a5aefced92885f38af03ee53472185a982cd46ac31fb083",
+        "cv.arff": "c791accd714d1c28f814c02968be2e2f78f46d023a3f75651e45c04b4dc67428",
+        "description.txt": "102aa83f81f2d6a106f06a52557c21ac1137388c409412e4d993d824ea769878",
+        "feature_costs.arff": "69afd2000a9f00918ce44cfeec844bf9ca157653ddc5ecc5f35e63bc3bc075ab",
+        "feature_runstatus.arff": "b982211e36bb0d8d48af6a61c5bb9a2fbb404b6b8f4451380aa4f912c6fab184",
+        "feature_values.arff": "665db965e47d85938155a5e480126ec650cb52ec3ac611d79984a7177e310688"
+      },
+      "performance_shape": [
+        2000,
+        10
+      ],
+      "feature_shape": [
+        2000,
+        483
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Undeclared algorithm 'cominisatps' in algorithm_runs.arff": 2000,
+        "Undeclared algorithm 'riss5' in algorithm_runs.arff": 2000,
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "PAR10"
+      ]
+    },
+    "SAT11-HAND": {
+      "sha256": {
+        "algorithm_runs.arff": "8bdbd305e8f7c6bb337c546cff67a99a0dcbcae7ed95b2247808e375af1a7f8c",
+        "cv.arff": "3896fef81ee8c90c21a8963531c96fabd3cecf84c7238bb81444ef709def2414",
+        "description.txt": "0e23dc6b70a69caac52b4bd1ff4746ea0dae2e9e52068cce70ff79029641a2f1",
+        "feature_costs.arff": "9d8c73e09459cd871fd8272deef2981ab61048cfbc402644974b5b9faf0a1cb9",
+        "feature_runstatus.arff": "d911605fa063f797052e6bc448fb3ef623d1d33e4f6e3411fbd91e6dd0a6f8dd",
+        "feature_values.arff": "8f382a61a85daf545f9a802d4cbd23439f23b618a85f73009e07307fcb9e0fc4",
+        "ground_truth.arff": "e4ed229c07ecd37d81f4a8572be9a70d617ee82d7d3ab3b4b3532b89711ae437"
+      },
+      "performance_shape": [
+        296,
+        15
+      ],
+      "feature_shape": [
+        296,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT11-HAND-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "f5f35647d8c39bdbe8807be87f2b64fd8b7cdbab2cd77bd17ebba6fb677da425",
+        "algorithm_feature_values.arff": "ecf4f5fd29f9f96a745cfcd56ebe6124327cfd9bd4ceb7de023fec0ab317f6e6",
+        "algorithm_runs.arff": "a34fb8d2c6f389b095aebc90f1faeaaee809c8a55212fad770df368a07babfa0",
+        "cv.arff": "3896fef81ee8c90c21a8963531c96fabd3cecf84c7238bb81444ef709def2414",
+        "description.txt": "8631ec532f65f3a1af39706b36e63fe6c3d5279e6f039d9ff6c84bd617de0907",
+        "feature_costs.arff": "20a17a5f3e41286f48a88673d499878e57577bed56958f979f05f2348d24316b",
+        "feature_runstatus.arff": "b1dab0cadb254b98386f85595bda0db408bf84bdfa43d3611435f55674f301d6",
+        "feature_values.arff": "42084d51566aff75e9fedec7def8991718ce933ef0b10108cea60cdba7b15157",
+        "ground_truth.arff": "25f2638d20f7a71210378e33e03b55975b85b69e2c8d9539cbf4a537f6cbc9fe"
+      },
+      "performance_shape": [
+        296,
+        15
+      ],
+      "feature_shape": [
+        296,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Undeclared algorithm 'CryptoMiniSat_Strange-Night2-st_fixed_' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'MPhaseSAT_2011-02-15' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'QuteRSat_2011-05-12_fixed_' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'SAT09referencesolverclasp_1.2.0-SAT09-32' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'SApperloT2010_2011-05-15_fixed_' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'Sol_2011-04-04' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'clasp_2.0-R4092-crafted' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'jMiniSat_2011' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'sathys_2011-04-01' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'sattime+_2011-03-02' in algorithm_runs.arff": 296,
+        "Undeclared algorithm 'sattime_2011-03-02' in algorithm_runs.arff": 296,
+        "algorithm_runs.arff: no measurement coverage for algorithms ['CryptoMiniSat_Strange.Night2.st_fixed_', 'MPhaseSAT_2011.02.15', 'QuteRSat_2011.05.12_fixed_', 'SAT09referencesolverclasp_1.2.0.SAT09.32', 'SApperloT2010_2011.05.15_fixed_', 'clasp_2.0.R4092.crafted', 'sathys_2011.04.01']": 1,
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT11-INDU": {
+      "sha256": {
+        "algorithm_runs.arff": "a5314349ce73459193d9bc87abb56a14a5b2287b8c90f4333f1c163c8b4af377",
+        "cv.arff": "2827e948e8ab7165752b818bb35a9cbcb4d08fac3f38bb2411444b1e1aa0e982",
+        "description.txt": "42e6cb2f15138664699574d0fc6b092ea349937aba449b7611a8d50c3dbd6419",
+        "feature_costs.arff": "0415641c32054cf8833a9082b3f6356b23cb662508c83d6f1e52d7a90429a56e",
+        "feature_runstatus.arff": "0682a3395dd4cb05916f430fc28c12471f4026353a648ed668bd077b93608631",
+        "feature_values.arff": "d0e59233329a686c6fd69c55a5307af900acc76470c3e8d0ef1d9d47bffe0887",
+        "ground_truth.arff": "fc9f45392d1b4a2acea9916ff4b558303bcf140412b55abec7149f52e8e2d92d"
+      },
+      "performance_shape": [
+        300,
+        18
+      ],
+      "feature_shape": [
+        300,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT11-INDU-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "2a1b007d9a609b25a94269f3594563b316fdc1c22d914686a0468a5cba1d2df2",
+        "algorithm_feature_values.arff": "c24e9c75c360bf5b405ba08fe1f458f68c880c6db711ba5376d72d5e946233b6",
+        "algorithm_runs.arff": "64d68f704abddc3f3ec4f7cd467087e9a9e4da2faa9de8dbdd46c458dede8cf5",
+        "cv.arff": "2827e948e8ab7165752b818bb35a9cbcb4d08fac3f38bb2411444b1e1aa0e982",
+        "description.txt": "8fb32ae8c9635c8bbff2a957896f8eebbf165909765d8afed031654606e83004",
+        "feature_costs.arff": "b3d61dee157b4c5e68091ee6c0a61699736bf93d90fb3bf74e9789d36d168614",
+        "feature_runstatus.arff": "c819681fc4ea9fcfb94c6e66e69f74e5ceebe09e32af0aeab4e23e21ed27856e",
+        "feature_values.arff": "5a18ae01aae1e9c73f76029052f8375c794a9ca7c4956029946ad5ae298d517c",
+        "ground_truth.arff": "1dc506ecf4371ed3fe93d098c7f77a69e2c9ddd0b84f11da9d0fb4c5beb7c9f4"
+      },
+      "performance_shape": [
+        300,
+        18
+      ],
+      "feature_shape": [
+        300,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT11-RAND": {
+      "sha256": {
+        "algorithm_runs.arff": "9f2c37f952f108d9ac3b1627413afabb744d4754883f0f83e66a8cba1e19470f",
+        "cv.arff": "725cf6ceb0f698c7a66352e923b4c9bcdcbdea307d6756197c3a13f6d2e7657d",
+        "description.txt": "5db852e2d725d2700cc182224ed57ba9ab4b037de433080c4589f2648f5916f6",
+        "feature_costs.arff": "b496556bd5c14dd1e985f11208e6b9ebb6e6aaa75c03ce8a13337574d2972ed9",
+        "feature_runstatus.arff": "08c9c2afe3f280561c15191c0ac1e3cf0fca8eff965626a3e10c294e7a97161a",
+        "feature_values.arff": "bfc76824567425ed212767acabcd98e6dc830747147272555cdadc983255829d",
+        "ground_truth.arff": "dd8ef471dde81a354bf16e3af33bb5040236fca0b78542df05e46ae09e917287"
+      },
+      "performance_shape": [
+        600,
+        9
+      ],
+      "feature_shape": [
+        600,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT11-RAND-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "fd5a2c456d0588dc441c31e72b82108fd5b5f696c3b8c993d7c1f157afc04c54",
+        "algorithm_feature_values.arff": "fc8e78da3165d0e894df757688499c3b1f2d128884bc0595f69897a36e95e426",
+        "algorithm_runs.arff": "6c80b7210ae98ba83d2e76b07ade2f8d452d62120c93002debad696ca3495dfb",
+        "cv.arff": "725cf6ceb0f698c7a66352e923b4c9bcdcbdea307d6756197c3a13f6d2e7657d",
+        "description.txt": "5b8d91cd959ceae2006139e09c86655ae745d28dac73842262ce46e945b17f05",
+        "feature_costs.arff": "76e8449ab723196f4b0f7aeb0a69f4ab17bcef19048d698c1fa41caa3d6b34d9",
+        "feature_runstatus.arff": "6ba18e4a0bfe5076cbfbde42bf004bfcae717ed8487f4e49a6edf3f47140cc0b",
+        "feature_values.arff": "34727261e0c8ec4957aa1acb1ce76254219b482182994ce1a310d770f7751143",
+        "ground_truth.arff": "59a676d583422f6342993dc3db2603e9a17e86c8dac607bde991ee2d8ff6b0d0"
+      },
+      "performance_shape": [
+        600,
+        9
+      ],
+      "feature_shape": [
+        600,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Undeclared algorithm 'MPhaseSAT_M_2011-02-16' in algorithm_runs.arff": 600,
+        "Undeclared algorithm 'SAT09referencesolverTNM_2009-03-22' in algorithm_runs.arff": 600,
+        "Undeclared algorithm 'SAT09referencesolvergnovelty+2_2009-03-22' in algorithm_runs.arff": 600,
+        "Undeclared algorithm 'adaptg2wsat2011_2011-03-02' in algorithm_runs.arff": 600,
+        "Undeclared algorithm 'march_rw_2011-03-02' in algorithm_runs.arff": 600,
+        "Undeclared algorithm 'sattime2011_2011-03-02' in algorithm_runs.arff": 600,
+        "Undeclared algorithm 'sparrow2011_sparrow2011_ubcsat1.2_2011-03-02' in algorithm_runs.arff": 600,
+        "algorithm_runs.arff: no measurement coverage for algorithms ['MPhaseSAT_M_2011.02.16', 'SAT09referencesolverTNM_2009.03.22', 'SAT09referencesolvergnovelty.2_2009.03.22', 'adaptg2wsat2011_2011.03.02', 'march_rw_2011.03.02', 'sparrow2011_sparrow2011_ubcsat1.2_2011.03.02']": 1,
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT12-ALL": {
+      "sha256": {
+        "algorithm_runs.arff": "6f59854478141961e3cd074716eef5b404086c56bf0854a444ad31c92b31cf55",
+        "cv.arff": "f18c960cbef9bd791748d22ec2beb907832779dd557fece369f35f761d49b572",
+        "description.txt": "e2152abeb2311213fb69f1881071b87eb584a5817ca361022a00e4cf3313f28c",
+        "feature_costs.arff": "dc1c89e0e2676979d24905f3d2fcfdc848b067ab9115fd97c4dde119c0784050",
+        "feature_runstatus.arff": "a705d74e6f3aff216c4707ec488c6092eb0dddda5b531279d500a7cf9d30b60b",
+        "feature_values.arff": "4453d1d24a1377a8fe2e5abf1ceee5f981e799db20ce6ab657ea0969dadfc335",
+        "ground_truth.arff": "39aa83727074725ee3aab1067108057d6ca5a736fca3d2db23a8a70be9c17046"
+      },
+      "performance_shape": [
+        1614,
+        31
+      ],
+      "feature_shape": [
+        1614,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT12-HAND": {
+      "sha256": {
+        "algorithm_runs.arff": "4cc720d1f8fda93e2b717cd1684a684d5354ba7d8aca66b933ebde1f67de7e7d",
+        "cv.arff": "b817329452ad2d3af88e294c627f741e0b3d378b8b9685cae4582fc35dbb66a4",
+        "description.txt": "e3c5274b9d838a8edcef4fe4e5983e964e6544afda183dae9946b0762af8e5ea",
+        "feature_costs.arff": "d9e3d23230828a4a2010c63b9d5bec654f7cdebba79100210141943d9ab5ff77",
+        "feature_runstatus.arff": "bb145811fb13cf7e986433c7dacebe45887a5cbbbf41db93d20c9d3e2c878cf3",
+        "feature_values.arff": "0eaa6577a4114c0a40d0de990ff453df1efc9dde0cba80f76ff1821932ec22f4",
+        "ground_truth.arff": "a6932268b6d2bfc3c830ac865c84189bc2609e1557ec277db61eb7e76896d2ed"
+      },
+      "performance_shape": [
+        767,
+        31
+      ],
+      "feature_shape": [
+        767,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT12-INDU": {
+      "sha256": {
+        "algorithm_runs.arff": "50407374c921be8e1108906716a8f27f910ea88f2e2a0a2ba6b87d92f358d19f",
+        "cv.arff": "ae7e70ebd1b4d9eca3213557f4ad962ded79c1330f9001c1041063f6df091ff7",
+        "description.txt": "acd630268ca455085e8af638a9fefb963b2363fbe1a1ac57224e401313592662",
+        "feature_costs.arff": "dc1eaea462cf199ce298f28e2fa4eed1f3a942b3a76e3dfaf36793f514687824",
+        "feature_runstatus.arff": "155372e99481b782ddf5c8a2c9410d52f986edc7c2610517dd1d46747618c0e2",
+        "feature_values.arff": "7f1a82e75de8acd065a54be1c7f6b09f32240fa28d580028edc1c9833f4e9c50",
+        "ground_truth.arff": "5d5a9d11b307f91023be6f38c129f4a6aeae2f658bdcfe4d8d2a430a2ac203a7"
+      },
+      "performance_shape": [
+        1167,
+        31
+      ],
+      "feature_shape": [
+        1167,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT12-RAND": {
+      "sha256": {
+        "algorithm_runs.arff": "18288bdc48685cb20bd89e1aeddc1291b590ab467330cb5a7df259f98c8bac36",
+        "cv.arff": "425e4285bb3e482e9572b76c9d1997dab9fd6a696481be24eddd178806882156",
+        "description.txt": "300c168097fe166ab0d4b5e18f5169e678fbbabd60bd826c9514ccfd3c8c3f2d",
+        "feature_costs.arff": "b5631192e34710f2eaae9cf8692953cc805225fcdfbf0496cfaad16fb683726a",
+        "feature_runstatus.arff": "2b868c42599b475b188038b947e1168769ed84082406ac5b1fb63a4657ba69b9",
+        "feature_values.arff": "6c2380119ea15ad44b615303b08897017ee40fdc0b50f9c36b25b963026fc309",
+        "ground_truth.arff": "601ce15c0b36e04bd928693d22d30cbb7fa54756490b466b5c3dc99847d27955"
+      },
+      "performance_shape": [
+        1362,
+        31
+      ],
+      "feature_shape": [
+        1362,
+        115
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT15-INDU": {
+      "sha256": {
+        "algorithm_runs.arff": "6e6835588919775197dc0d3dc16c0acc16c16681d2b8504608ecdeeef718576c",
+        "cv.arff": "882e06057d1a61acdca453e60b1310bee25964a73b15e38fe6664a1d4767a64b",
+        "description.txt": "a60159923697e89e96fc9053966e616be9a7461c41abeeedae69de814c7d64af",
+        "feature_runstatus.arff": "eb8d1851c5e95ebbea2cb6b0224ed41a986e982093f91dd610dd7df4fa555748",
+        "feature_values.arff": "2803c507dbdc1e16bf78f0b3d54fc497b41a84130281ddda0811f582b0592015"
+      },
+      "performance_shape": [
+        300,
+        28
+      ],
+      "feature_shape": [
+        300,
+        54
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT16-MAIN": {
+      "sha256": {
+        "algorithm_runs.arff": "3893c5eff7515ee3223620ab8653f1b3fa6c6862b98cba63d6bf99d9203baae4",
+        "cv.arff": "0c2216302d671f7f00bfa526ca07c687c8523de523966c23497851451580436c",
+        "description.txt": "4ec88cb9812f91048f971529dd39cfce182f7ce1da301234df0d98bbb80bdad7",
+        "feature_costs.arff": "d2f03f973bbf39391b3205d3298c2bb2eec22fd9b816bcad0a9b14820183a986",
+        "feature_runstatus.arff": "6f8b8a944d69eeda7d11201a0d56e7cb4eb255d6747062983d50761299c375e4",
+        "feature_values.arff": "cb2e4afe85ada085a2122b3d23b67f4063e00de66885f480b2d1cc2e85b77179"
+      },
+      "performance_shape": [
+        274,
+        25
+      ],
+      "feature_shape": [
+        274,
+        54
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Algorithm 'BeansAndEggs' requires configuration and deterministic metadata": 1,
+        "Algorithm 'CHBR_glucose' requires configuration and deterministic metadata": 1,
+        "Algorithm 'CHBR_glucose_tuned' requires configuration and deterministic metadata": 1,
+        "Algorithm 'COMiniSatPSChandrasekharDRUP' requires configuration and deterministic metadata": 1,
+        "Algorithm 'GHackCOMSPS_DRUP' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Glucose_nbSat' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Lingelingbbcmain' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleCMS' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleCOMSPS_CHB_DRUP' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleCOMSPS_DRUP' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleCOMSPS_LRB_DRUP' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleGlucose' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Riss6' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Splatz06vmain' requires configuration and deterministic metadata": 1,
+        "Algorithm 'YALSAT03r' requires configuration and deterministic metadata": 1,
+        "Algorithm 'abcdSAT_drup' requires configuration and deterministic metadata": 1,
+        "Algorithm 'cmsat5_autotune2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'cmsat5_main2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glucose' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glucose_hack_kiel_newScript' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glue_alt' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glueminisat.2210.81.main' requires configuration and deterministic metadata": 1,
+        "Algorithm 'gulch' requires configuration and deterministic metadata": 1,
+        "Algorithm 'tb_glucose' requires configuration and deterministic metadata": 1,
+        "Algorithm 'tc_glucose' requires configuration and deterministic metadata": 1
+      },
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT18-EXP": {
+      "sha256": {
+        "algorithm_runs.arff": "247f836b5f85f5104d9279731a4b506db985cddbc05723f26543b202d1ab4e07",
+        "cv.arff": "eee11e2797f93f40504a991a0545938ba05c89fb215c252ef2d39fe5dfdc84dc",
+        "description.txt": "69dbbe46e69b51a344d5c79ee438071fe1de8f9b846437160403a1b9c812af39",
+        "feature_costs.arff": "ea9c4d4a69107c4ddbc09978df661b84a0b89a04268bdf940e7c5feeb7464730",
+        "feature_runstatus.arff": "43230072899bb5243ff5baf1d12fae2970556a2a807a8252cbeb1abfb069e99d",
+        "feature_values.arff": "6975847b67e254d0901c130f0369702b79a0b7294563612970a07a3a589be91e"
+      },
+      "performance_shape": [
+        353,
+        37
+      ],
+      "feature_shape": [
+        353,
+        54
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "Algorithm 'COMiniSatPS_Pulsar_drup' requires configuration and deterministic metadata": 1,
+        "Algorithm 'CaDiCaL' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Candy' requires configuration and deterministic metadata": 1,
+        "Algorithm 'GHackCOMSPS_drup' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Glucose_Hack_Kiel_fastBVE' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Lingeling' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleCOMSPS_CHB_VSIDS_drup' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleCOMSPS_LRB_VSIDS_2_fix' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleCOMSPS_LRB_VSIDS_drup' requires configuration and deterministic metadata": 1,
+        "Algorithm 'MapleLCMDistChronoBT' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_CM' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_CM_Dist' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_CM_ordUIP' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_CM_ordUIP+' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_LCM+BCrestart' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_LCM+BCrestart_M1' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_LCM_M1' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_LCM_Scavel_200_fix2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Maple_LCM_Scavel_fix2' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Minisat-v2.2.0-106-ge2dd095' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Riss7.1-fix' requires configuration and deterministic metadata": 1,
+        "Algorithm 'Sparrow2Riss-2018-fixfix' requires configuration and deterministic metadata": 1,
+        "Algorithm 'YalSAT' requires configuration and deterministic metadata": 1,
+        "Algorithm 'abcdsat_r18' requires configuration and deterministic metadata": 1,
+        "Algorithm 'cms55-main-all4fixed' requires configuration and deterministic metadata": 1,
+        "Algorithm 'expGlucose' requires configuration and deterministic metadata": 1,
+        "Algorithm 'expMC_LRB_VSIDS_Switch' requires configuration and deterministic metadata": 1,
+        "Algorithm 'expMC_LRB_VSIDS_Switch_2500' requires configuration and deterministic metadata": 1,
+        "Algorithm 'expMC_VSIDS_LRB_Switch_2500' requires configuration and deterministic metadata": 1,
+        "Algorithm 'gluHack' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glu_mix' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glucose-3.0_PADC_10' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glucose-3.0_PADC_3' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glucose3.0' requires configuration and deterministic metadata": 1,
+        "Algorithm 'glucose4.2.1' requires configuration and deterministic metadata": 1,
+        "Algorithm 'inIDGlucose' requires configuration and deterministic metadata": 1,
+        "Algorithm 'smallsat' requires configuration and deterministic metadata": 1
+      },
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT18-EXP-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "2739ab37e2c775fa3cbfcab5ea01a8f93a3964ddd63892bc19dfc20b6b871407",
+        "algorithm_feature_values.arff": "eda2a1233a5316dca286b422fa2ba1f3fafbb9589e8751a728c0d72958cf84b8",
+        "algorithm_runs.arff": "247f836b5f85f5104d9279731a4b506db985cddbc05723f26543b202d1ab4e07",
+        "cv.arff": "eee11e2797f93f40504a991a0545938ba05c89fb215c252ef2d39fe5dfdc84dc",
+        "description.txt": "5437bdd1189ab3324e13fad13285416c07ec52b4ef0fa5cfef8ded647a6ab598",
+        "feature_runstatus.arff": "f9b1db4d3ef2aef12a30cf611ee98c38f67adc37d6f42fda6daa1d87cab7cec1",
+        "feature_values.arff": "a19cbfaafd83293bbead15980133b3717cd3c8d49e295329cb266dc4d663876a"
+      },
+      "performance_shape": [
+        353,
+        37
+      ],
+      "feature_shape": [
+        353,
+        50
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "SAT20-MAIN": {
+      "sha256": {
+        "algorithm_runs.arff": "0acfc06c0886d0ceab9eb21823fdf87bdad77af867a9a9481eae35b1285b395e",
+        "cv.arff": "47a2431b35a2a047e763d3bb42935ab147541988cb3a8eccad19399ed1b66f0c",
+        "description.txt": "42433c7119304669fcc598c46fdd2a3d90355548324a333f47331b660c62fd72",
+        "feature_costs.arff": "8d8e87109d0d26ab962027d4214b9f4bb8a4875069c30cb51fc8a7229252fa84",
+        "feature_runstatus.arff": "0c9c77cd6e03f4d4241f347f40251fab43f973330829af92ad6542b5bfb4c7de",
+        "feature_values.arff": "ca99e5fba1278e9fbd0be25b34b697a5142f2b444801da4f8e7d31640d72ec4f"
+      },
+      "performance_shape": [
+        400,
+        67
+      ],
+      "feature_shape": [
+        400,
+        108
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {
+        "'features_cutoff_time' not specified in description.txt.": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "TSP-LION2015": {
+      "sha256": {
+        "algorithm_runs.arff": "75a5874781124264091266e23d6450b965972657c62161b18c1925d40daa30d5",
+        "cv.arff": "77d514c4541f7c440315d25bfeab85b16f14cef5b26548679d92453685b129d3",
+        "description.txt": "1fe6e7b0dc37abc7b0592b505d33a16a355177ed42a99604065ff895117f1290",
+        "feature_costs.arff": "a5755ff56f5aea60f7c1d75f4bd29a4ae2370fdc395504ef86d15b8b98f833b4",
+        "feature_runstatus.arff": "f3a311b30f53dce568761993a9f3b81ba8c84c7e6cb2557f3aa41fba9c3a2920",
+        "feature_values.arff": "1c8aa8ddc21bf019326f1a3a26b75230943400457a354aa4dedc8e093f74826d"
+      },
+      "performance_shape": [
+        3106,
+        4
+      ],
+      "feature_shape": [
+        3106,
+        122
+      ],
+      "cv_repetitions": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "TSP-LION2015-ALGO": {
+      "sha256": {
+        "algorithm_feature_runstatus.arff": "4e68d8325b0440c3060e543dd79cf4df9a17059ea6c8cb4207f30bc577bf8481",
+        "algorithm_feature_values.arff": "ad243906ceef01f21186235bfd7cbd417813d9937510893a25691b6b057f4251",
+        "algorithm_runs.arff": "75a5874781124264091266e23d6450b965972657c62161b18c1925d40daa30d5",
+        "cv.arff": "77d514c4541f7c440315d25bfeab85b16f14cef5b26548679d92453685b129d3",
+        "description.txt": "70fc3bca5fc8032e17122c5eadd5dbaebcd873283afb121586df8e6027c58149",
+        "feature_costs.arff": "a5755ff56f5aea60f7c1d75f4bd29a4ae2370fdc395504ef86d15b8b98f833b4",
+        "feature_runstatus.arff": "f3a311b30f53dce568761993a9f3b81ba8c84c7e6cb2557f3aa41fba9c3a2920",
+        "feature_values.arff": "1c8aa8ddc21bf019326f1a3a26b75230943400457a354aa4dedc8e093f74826d"
+      },
+      "performance_shape": [
+        3106,
+        4
+      ],
+      "feature_shape": [
+        3106,
+        122
+      ],
+      "cv_repetitions": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "errors": {
+        "Feature steps must provide exactly the declared features": 1,
+        "default_steps references undefined feature steps: {'AST', 'code'}": 1
+      },
+      "warnings": {
+        "algorithm_feature_runstatus.arff: algorithm-feature validation is not implemented": 1,
+        "algorithm_feature_values.arff: algorithm-feature validation is not implemented": 1
+      },
+      "performance_measures": [
+        "runtime"
+      ]
+    },
+    "TTP-2016": {
+      "sha256": {
+        "algorithm_runs.arff": "7611877312df73ecc4349a7edbabc5526e59640d8ddedb01c7103f3767e4292f",
+        "cv.arff": "58899486c46f756224816d0e9b5b429112061eb60e630a7fd0e8e81c71461cba",
+        "description.txt": "f21fe9ab41bdf7589ac7a06d5336fa6c397c73f02caf48af33b42febc3c1b866",
+        "feature_runstatus.arff": "d6bc7343ae71b073ba72be05753f74b7f41484257dd5a02995d15ef19f6edf03",
+        "feature_values.arff": "c861be63d120c81448c9fd3151810351f0db3a979231196b1326b1b8ba784c20"
+      },
+      "performance_shape": [
+        9720,
+        21
+      ],
+      "feature_shape": [
+        9720,
+        55
+      ],
+      "cv_repetitions": [
+        1
+      ],
+      "errors": {},
+      "warnings": {},
+      "performance_measures": [
+        "solution_quality"
+      ]
+    }
+  }
+}
