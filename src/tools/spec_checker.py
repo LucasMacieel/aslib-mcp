@@ -397,6 +397,7 @@ class ASlibSpecLinter:
 
         instances = set()
         algorithms = set()
+        coverage: dict[tuple, set[str]] = {}
         valid_statuses = {"ok", "timeout", "memout", "not_applicable", "crash", "other"}
         has_null = False
 
@@ -411,6 +412,7 @@ class ASlibSpecLinter:
             status = str(row[-1]).lower()
             instances.add(inst_id)
             algorithms.add(algo)
+            coverage.setdefault((algo, row[1]), set()).add(inst_id)
             declared = self.metadata.get("metainfo_algorithms")
             if isinstance(declared, dict) and algo not in declared:
                 self.errors.append(
@@ -428,6 +430,21 @@ class ASlibSpecLinter:
                     isinstance(val, (int, float)) and not math.isfinite(val)
                 ):
                     has_null = True
+
+        for (algo, repetition), measured_instances in coverage.items():
+            if measured_instances != instances:
+                self.errors.append(
+                    f"algorithm_runs.arff: incomplete measurement coverage for algorithm "
+                    f"'{algo}', repetition {repetition}: "
+                    f"{len(instances - measured_instances)} instances missing"
+                )
+        declared = self.metadata.get("metainfo_algorithms")
+        if isinstance(declared, dict):
+            absent = set(map(str, declared)) - algorithms
+            if absent:
+                self.errors.append(
+                    f"algorithm_runs.arff: no measurement coverage for algorithms {sorted(absent)}"
+                )
 
         if has_null:
             self.errors.append(

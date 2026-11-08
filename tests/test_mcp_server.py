@@ -108,3 +108,27 @@ async def test_mcp_generated_cv_is_reusable(mini_scenario_dir: Path):
         assert (
             result.data["train_num_instances"] + result.data["test_num_instances"] == 5
         )
+
+
+@pytest.mark.anyio
+async def test_malformed_scenario_does_not_end_session(mini_scenario_dir: Path):
+    import arff
+
+    path = mini_scenario_dir / "algorithm_runs.arff"
+    with path.open() as stream:
+        data = arff.load(stream)
+    data["data"].pop(0)
+    with path.open("w") as stream:
+        arff.dump(data, stream)
+    async with Client(mcp, timeout=10) as client:
+        failed = await client.call_tool(
+            "aslib_read_scenario",
+            {"scenario_dir": str(mini_scenario_dir)},
+            raise_on_error=False,
+        )
+        assert failed.is_error
+        result = await client.call_tool(
+            "aslib_permutation_test", {"vec1": [1, 2], "vec2": [1, 2]}
+        )
+        assert not result.is_error
+        assert result.data["p_value"] == 1.0

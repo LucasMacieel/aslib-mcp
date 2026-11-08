@@ -20,13 +20,12 @@ if _pkg_root not in sys.path:
 
 import numpy as np
 import pandas as pd
-from aslib_scenario.aslib_scenario import ASlibScenario
 from fastmcp import FastMCP
-from sklearn.model_selection import KFold
 
-from src.tools.csv_tables import read_matrix_csv
 from src.tools.permutation_tester import PermutationTester, permutation_test_scenario
 from src.tools.scenario_exporter import export_aslib_scenario
+from src.tools.scenario_loader import ASlibScenario, read_cv_csv
+from src.tools.scenario_loader import generate_cv as _generate_cv
 from src.tools.scenario_repository import (
     fetch_scenario,
     get_scenario_info,
@@ -45,18 +44,6 @@ ASLIB_SPEC_REFERENCE = "https://github.com/coseal/aslib-spec/tree/master"
 ASLIB_DATA_REFERENCE = "https://github.com/coseal/aslib_data"
 
 aslib_scenario_mcp = FastMCP(name="aslib_scenario")
-
-
-def _generate_cv(instances: list, n_folds: int, seed: int | None) -> pd.DataFrame:
-    """Generate CV using an independent RNG, without changing global random state."""
-    assignments = pd.DataFrame(
-        {"fold": np.zeros(len(instances), dtype=int)}, index=instances
-    )
-    for fold, (_, test) in enumerate(
-        KFold(n_splits=n_folds, shuffle=True, random_state=seed).split(instances), 1
-    ):
-        assignments.iloc[test, 0] = fold
-    return assignments
 
 
 def _get_output_dir(output_dir: str | None, prefix: str = "aslib") -> Path:
@@ -413,28 +400,7 @@ def aslib_get_cv_split(
     scenario.read_scenario(str(scen_path))
 
     if cv_csv_path is not None:
-        assignments = read_matrix_csv(cv_csv_path)
-        assignments.index = assignments.index.astype(str)
-        if (
-            assignments.index.has_duplicates
-            or set(assignments.index) != set(scenario.instances or [])
-            or list(assignments.columns) != ["fold"]
-        ):
-            raise ValueError(
-                "CV CSV must contain all scenario instances exactly once and one fold column"
-            )
-        folds = pd.to_numeric(assignments["fold"], errors="coerce")
-        if (
-            not np.isfinite(folds).all()
-            or (folds < 1).any()
-            or (folds != np.floor(folds)).any()
-            or folds.nunique() < 2
-        ):
-            raise ValueError(
-                "CV folds must be positive integers with at least two folds"
-            )
-        assignments["fold"] = folds
-        scenario.cv_data = assignments
+        scenario.cv_data = read_cv_csv(cv_csv_path, scenario.instances or [])
     elif scenario.cv_data is None:
         instances = scenario.instances or []
         scenario.cv_data = _generate_cv(instances, min(10, len(instances)), seed)
@@ -945,6 +911,7 @@ def aslib_permutation_test(
             alpha=alpha,
             noise=noise,
             seed=seed,
+            par_factor=par_factor,
         )
     else:
         if vec1 is None or vec2 is None:

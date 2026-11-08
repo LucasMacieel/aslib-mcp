@@ -17,10 +17,10 @@ from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
-from aslib_scenario.aslib_scenario import ASlibScenario
 
 from src.tools.csv_tables import read_matrix_csv
 from src.tools.permutation_tester import PermutationTester
+from src.tools.scenario_loader import ASlibScenario
 
 
 class SelectorEvaluator:

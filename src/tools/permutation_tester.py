@@ -178,9 +178,10 @@ def permutation_test_scenario(
     alpha: float = 0.05,
     noise: float | None = None,
     seed: int | None = 1234,
+    par_factor: float = 10.0,
 ) -> dict[str, Any]:
     """Runs a paired permutation test on two algorithms directly from an ASlib scenario."""
-    from aslib_scenario.aslib_scenario import ASlibScenario
+    from src.tools.scenario_loader import ASlibScenario
 
     scen = ASlibScenario()
     scen.read_scenario(str(Path(scenario_dir).resolve()))
@@ -211,6 +212,18 @@ def permutation_test_scenario(
     if scen.performance_type[0] != "runtime":
         cutoff = None
 
+    if scen.performance_type[0] == "runtime":
+        # Upstream has already applied PAR10; reconstruct the requested penalty
+        # using runstatus as well as the runtime cutoff before comparison.
+        if cutoff is None or not np.isfinite(cutoff) or cutoff <= 0:
+            raise ValueError("Runtime scenario requires a finite positive cutoff")
+        if scen.runstatus_data is None:
+            raise ValueError("Scenario has no algorithm runstatuses")
+        ok = scen.runstatus_data.eq("ok")
+        vec1 = np.where(ok[algo1] & (vec1 < cutoff), vec1, cutoff * par_factor)
+        vec2 = np.where(ok[algo2] & (vec2 < cutoff), vec2, cutoff * par_factor)
+        cutoff = None  # Scores are already penalized, including factors below one.
+
     tester = PermutationTester(seed=seed)
     return tester.run_test(
         vec1=vec1,
@@ -220,7 +233,7 @@ def permutation_test_scenario(
         name1=algo1,
         name2=algo2,
         cutoff=cutoff,
-        par_factor=10.0,
+        par_factor=par_factor,
         noise=noise,
         maximize=maximize,
     )
